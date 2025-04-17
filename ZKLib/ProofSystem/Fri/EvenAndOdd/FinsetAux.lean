@@ -89,15 +89,14 @@ theorem erase_even_mem
 
 @[simp]
 theorem mul_by_2_mem {s : Finset ℕ} {d : ℕ} :
-    d ∈ mul_by_2 s ↔ Even d ∧ d.div2 ∈ s := by 
+    d ∈ mul_by_2 s ↔ Even d ∧ (d / 2) ∈ s := by 
   simp [mul_by_2]
   apply Iff.intro <;> intro h
   · rcases h with ⟨a, ⟨h1, h2⟩⟩ 
     rw [←h2]
     simp [h1]
-  · exists d.div2 
+  · exists d / 2
     simp [h]
-    rw [Nat.div2_val]
     rw [Nat.even_iff] at h
     omega 
 

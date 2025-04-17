@@ -78,13 +78,13 @@ lemma deevenize_coeff {f : Polynomial F} {n : ℕ} :
 
 noncomputable def evenize (f : Polynomial F) : Polynomial F :=
   match f with
-  | ⟨⟨supp, g, h⟩⟩ => ⟨⟨mul_by_2 supp, fun n => if Even n then g (n.div2) else 0, by {
+  | ⟨⟨supp, g, h⟩⟩ => ⟨⟨mul_by_2 supp, fun n => if Even n then g (n / 2) else 0, by {
     aesop 
   }⟩⟩
 
 @[simp]
 lemma evenize_coeff {f : Polynomial F} {n : ℕ} :
-    (evenize f).coeff n = if Even n then f.coeff (n.div2) else 0 := by
+    (evenize f).coeff n = if Even n then f.coeff (n / 2) else 0 := by
     rcases f with ⟨⟨supp, g, h⟩⟩ 
     simp [evenize]
 
