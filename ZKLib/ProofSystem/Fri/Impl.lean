@@ -13,4 +13,8 @@ def FriSpec (F : Type) (r : ℕ) : OracleSpec (Fin (r + 1)) :=
 
 def FriMonad (F : Type) (r : ℕ) := OracleComp (FriSpec F r)
 
-def FriVerifier (r : ℕ) : OracleComp
+def FriVerifierQueryAux (F : Type) (r : ℕ) (i : ℕ) := 
+  match i with 
+  | 0 =>  
+
+/- def FriVerifierQuery (F : Type) (r : ℕ) : FriMonad F r  -/
