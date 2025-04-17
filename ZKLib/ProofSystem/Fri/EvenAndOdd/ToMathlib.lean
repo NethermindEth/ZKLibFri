@@ -26,9 +26,9 @@ lemma inv_two_mul_two : 2⁻¹ * (2 : F) = 1 := by simp
 
 end NonBinaryField
 
-variable {F: Type} [Field F]
-
 section
+
+variable {F: Type} [Field F]
 
 open Polynomial
 
