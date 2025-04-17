@@ -57,35 +57,18 @@ private lemma comp_x_square_coeff_pos_deg {f : Polynomial F} {n : ℕ} (h : 0 < 
   · rintro _ _ _ (_ | _ | n) <;> try simp [←mul_assoc]
     have : (n + 1 + 1) / 2 = n / 2 + 1 := by omega
     aesop (add simp [Nat.even_iff, Nat.odd_iff], safe (by omega))
-  · rintro p a hpdeg ih (_ | _ | n) <;> try simp_all
+  · rintro _ _ _ _ (_ | _ | n) <;> try simp_all
     have : (n + 1 + 1) / 2 = n / 2 + 1 := by omega
     aesop (add safe (by omega))
 
 theorem comp_x_square_coeff {f : Polynomial F} {n : ℕ} :
-  (f.comp (Polynomial.X * Polynomial.X)).coeff n = if Even n then f.coeff (n / 2) else 0 := by
-    by_cases hpos : 0 < f.degree 
-    · rw [comp_x_square_coeff_pos_deg hpos]
-    · generalize hdeg : f.degree = d 
-      rcases d with _ | d 
-      · rw [WithBot.none_eq_bot, degree_eq_bot] at hdeg 
-        simp [hdeg]
-      · rw [WithBot.some_eq_coe] at hdeg 
-        rw [hdeg] at hpos
-        have hpos : d = 0 := by aesop 
-        have hdeg := natDegree_eq_of_degree_eq_some hdeg 
-        subst hpos
-        rw [Polynomial.natDegree_eq_zero] at hdeg 
-        rcases hdeg with ⟨x, hdeg⟩ 
-        rw [←hdeg]
-        rcases n with _ | n <;> try simp 
-        by_cases hif : Even (n + 1) <;> try simp [hif]
-        rcases n with _ | n <;> try simp 
-        · simp at hif 
-        · have h_plus_1 : (n + 1 + 1)/ 2 = n/2 + 1 := by 
-            have h_n_1_1 : n + 1 + 1 = n + 2 := by omega 
-            rw [h_n_1_1,
-                Nat.add_div_right _ (by omega)]
-          rw [h_plus_1]
-          simp 
+  (f.comp (X * X)).coeff n = if Even n then f.coeff (n / 2) else 0 := by
+  by_cases hpos : 0 < f.degree 
+  · rw [comp_x_square_coeff_pos_deg hpos]
+  · obtain ⟨_, hx⟩ := show ∃ x, C x = f by
+      aesop (add simp [natDegree_pos_iff_degree_pos.symm, natDegree_eq_zero])
+    rcases n with _ | _ | n <;> (subst hx; simp_all)
+    have : (n + 1 + 1) / 2 = n / 2 + 1 := by omega
+    aesop
 
 end   
