@@ -1,3 +1,8 @@
+/-
+Copyright (c) 2024-2025 ZKLib Contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: František Silváši, Julian Sutherland, Ilia Vlasov 
+-/
 import ZKLib.ProofSystem.Fri.EvenAndOdd.Def
 import ZKLib.ProofSystem.Fri.EvenAndOdd.ToMathlib
 
@@ -143,7 +148,7 @@ lemma deevenize_comp_x_squared {f : Polynomial F} (hEven : EvenPoly f):
   rw [comp_x_square_coeff]
   simp 
   by_cases hPar : Even n <;> simp [hPar]
-  · rw [Nat.div2_val, Nat.mul_div_eq_iff_dvd.2 (by {
+  · rw [Nat.mul_div_eq_iff_dvd.2 (by {
       rw [Nat.even_iff] at hPar 
       omega 
     })]
@@ -165,7 +170,7 @@ lemma eq_evenize_deevenize {f : Polynomial F} (hEven : EvenPoly f):
   intro n 
   simp 
   by_cases hPar : Even n <;> simp [hPar]
-  · rw [Nat.div2_val, Nat.mul_div_eq_iff_dvd.2 (by {
+  · rw [Nat.mul_div_eq_iff_dvd.2 (by {
       rw [Nat.even_iff] at hPar 
       omega 
     })]
