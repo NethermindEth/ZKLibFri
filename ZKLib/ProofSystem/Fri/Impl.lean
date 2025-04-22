@@ -2,19 +2,38 @@ import VCVio
 
 import ZKLib.ProofSystem.Fri.RoundConsistency
 
-def Transcript (F : Type) : Type := List F
+section Defs
 
-def FriSpec (F : Type) (r : ℕ) : OracleSpec (Fin (r + 1)) := 
-  fun i ↦ match i.val with
-  -- FS oracle 
-  | 0 => (Transcript F, F)
-  -- PIOP oracle 
-  | _ => (F, F)
+variable (F : Type) [Field F] 
+variable (D : Subgroup Fˣ) 
+variable (r : ℕ)
 
-def FriMonad (F : Type) (r : ℕ) := OracleComp (FriSpec F r)
+def FriCommitSpec : OracleSpec Unit := 
+  fun _ ↦ (Unit, D)
 
-def FriVerifierQueryAux (F : Type) (r : ℕ) (i : ℕ) := 
-  match i with 
-  | 0 =>  
+end Defs
 
-/- def FriVerifierQuery (F : Type) (r : ℕ) : FriMonad F r  -/
+variable {F : Type} [NonBinaryField F]
+variable {D : Subgroup Fˣ} 
+variable (r : ℕ)
+
+def getChallenge : (OracleComp (FriCommitSpec F D)) D 
+  := OracleComp.lift (OracleSpec.query (spec := FriCommitSpec F D) () ())
+
+noncomputable def commit_aux (f : Polynomial F) 
+  : (OracleComp (FriCommitSpec F D)) (Polynomial F × List (Polynomial F)) := 
+  List.foldlM (fun (f, acc) i => do
+    let nextf <- (if i < r then do
+      let α <- getChallenge;
+      let α := α ^ i;
+      let nextf := foldα f α.val
+      return nextf
+    else do
+      return f)
+    return (nextf, List.cons nextf acc)
+  ) (f, []) (List.range r) 
+
+noncomputable def commit (f : Polynomial F) 
+  : (OracleComp (FriCommitSpec F D)) (List (Polynomial F)) := 
+  Prod.snd <$> (commit_aux r f)
+
