@@ -17,6 +17,15 @@ noncomputable def ElocPoly {n : ℕ} {ωs : Fin n → F}
       let ω := ωs i 
       acc * if f i ≠ p.eval ω then (X - (Polynomial.C ω)) else X) (C 1) (List.range n.succ) 
 
+lemma eloc_poly_nonzero_def {n : ℕ} {ωs : Fin n → F} 
+  {f : Fin n → F} {p : Polynomial F} (hne: n ≠ 0) :
+    ElocPoly (ωs := ωs) f p = List.foldl (fun acc i => 
+      let i := @Fin.ofNat' n (neZero_iff.2 hne) i
+      let ω := ωs i 
+      acc * if f i ≠ p.eval ω then (X - (Polynomial.C ω)) else X) (C 1) (List.range n)  := by
+  rcases n with n | n <;> try simp at hne 
+  simp [ElocPoly]
+
 @[simp]
 lemma eloc_poly_zero {f : Fin 0 → F} {ωs : Fin 0 → F} {p : Polynomial F} :
     ElocPoly (ωs := ωs) f p = C 1 := by simp [ElocPoly]
@@ -28,7 +37,6 @@ lemma eloc_poly_one {f : Fin 1 → F} {ωs : Fin 1 → F} {p : Polynomial F} :
       if f i ≠ p.eval ω then (X - (Polynomial.C ω)) else X := by
   simp [ElocPoly, List.range_succ]
 
-@[simp]
 lemma eloc_poly_two {f : Fin 2 → F} {ωs : Fin 2 → F} {p : Polynomial F} :
     ElocPoly (ωs := ωs) f p = 
       if f 1 = eval (ωs 1) p 
@@ -52,7 +60,41 @@ lemma eloc_poly_succ {n : ℕ} [NeZero n]
     aesop
   | succ n ih => 
     intro f ωs p x hn
-    cases n <;> try simp 
+    by_cases h_n_z : n = 0
+    · subst h_n_z 
+      simp [eloc_poly_two]
+    · conv =>
+        lhs 
+        unfold ElocPoly 
+        rfl 
+      simp
+      rw [List.range_succ]
+      simp
+      by_cases hif :f (↑n + 1) = eval (ωs (↑n + 1)) p
+      · simp [hif]
+        rw [List.range_succ]
+        simp
+        by_cases hif : f ↑n = eval (ωs ↑n) p
+        · simp [hif]
+          have hhh 
+            := eloc_poly_nonzero_def 
+                (p := p) 
+                (f := f ∘ Fin.castSucc ∘ Fin.castSucc)
+                (ωs := ωs ∘ Fin.castSucc ∘ Fin.castSucc) h_n_z
+          simp at hhh
+          rw [←List.foldl_ext (f := (fun acc i ↦ if (f (↑i : Fin (n + 1 + 1))) = (eval (ωs ↑i) p) then acc * X else acc * (X - C (ωs ↑i)))) _ (a := C 1) (l := List.range n)] at hhh
+
+
+
+
+
+
+
+
+
+
+
+
     
     
 
