@@ -82,8 +82,11 @@ lemma eloc_poly_succ {n : ℕ} [NeZero n]
                 (f := f ∘ Fin.castSucc ∘ Fin.castSucc)
                 (ωs := ωs ∘ Fin.castSucc ∘ Fin.castSucc) h_n_z
           simp at hhh
-          rw [←List.foldl_ext (f := (fun acc i ↦ if (f (↑i : Fin (n + 1 + 1))) = (eval (ωs ↑i) p) then acc * X else acc * (X - C (ωs ↑i)))) _ (a := C 1) (l := List.range n)] at hhh
-
+          let f' := λ (acc : F[X]) (i : ℕ) ↦
+                      if (f (↑i : Fin (n + 1 + 1))) = (eval (ωs ↑i) p)
+                      then acc * X
+                      else acc * (X - C (ωs ↑i))
+          rw [List.foldl_ext (g := f')] at hhh
 
 
 
@@ -119,4 +122,3 @@ lemma roots_of_eloc_poly {f : Fin n → F} {p : Polynomial F} {x : F}
     intro ωs f p x hne heval
     simp [ElocPoly] at heval
   
-
