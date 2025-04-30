@@ -13,7 +13,7 @@ def FriCommitSpec : OracleSpec Unit :=
 
 inductive Oracle where
   | RO 
-  | PO : (Fin r) -> Oracle
+  | PO : (Fin r) → Oracle
 
 def FriQuerySpec : OracleSpec (Oracle r) := 
   fun i ↦ match i with
@@ -32,8 +32,8 @@ def getChallenge : (OracleComp (FriCommitSpec F D)) D
 noncomputable def commit_aux (f : Polynomial F) 
   : (OracleComp (FriCommitSpec F D)) (Polynomial F × List (Polynomial F)) := 
   List.foldlM (fun (f, acc) i => do
-    let nextf <- (if i < r then do
-      let α <- getChallenge;
+    let nextf ← (if i < r then do
+      let α ← getChallenge;
       let α := α ^ i;
       let nextf := foldα f α.val
       return nextf
@@ -58,9 +58,16 @@ def getChallengeQ  :
 
 noncomputable def query :
     OracleComp (FriQuerySpec F D r) Unit
-  := 
-  List.foldlM (fun _ i => do
-    let x₀ <- getChallengeQ r
-    -- todo
-    return ()
-  ) () (List.range r) 
+  := do 
+    let challenges ← List.foldlM (fun acc _ => do
+     let c ← getChallengeQ (F := F) r; 
+     return acc ++ [c.val.val]) [] (List.range r);
+    List.foldlM (fun _ i => do 
+      let x₀ := challenges.getD i (0 : F);
+      let s₀ ← getChallengeQ r;
+      let s₀ := s₀.val.val;
+      let α₀ ← getEval (r := r) i s₀;
+      let α₁ ← getEval r i (-s₀);
+      let β ← getEval r i.succ (s₀ ^ 2);
+      guard (consistency_check x₀ s₀ (-s₀) α₀ α₁ β) 
+    ) () (List.range r) 
