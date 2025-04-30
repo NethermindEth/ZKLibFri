@@ -12,17 +12,17 @@ noncomputable def ElocPoly {n : ℕ} {ωs : Fin n → F}
   (f : Fin n → F) (p : Polynomial F) : Polynomial F
   := match n with 
   | 0 => C 1
-  | n + 1 => List.foldl (fun acc i => 
+  | n + 1 => List.prod <| List.map (fun i => 
       let i := Fin.ofNat' n.succ i
       let ω := ωs i 
-      acc * if f i ≠ p.eval ω then (X - (Polynomial.C ω)) else X) (C 1) (List.range n.succ) 
+      if f i ≠ p.eval ω then (X - (Polynomial.C ω)) else X) (List.range n.succ) 
 
 lemma eloc_poly_nonzero_def {n : ℕ} {ωs : Fin n → F} 
   {f : Fin n → F} {p : Polynomial F} (hne: n ≠ 0) :
-    ElocPoly (ωs := ωs) f p = List.foldl (fun acc i => 
+    ElocPoly (ωs := ωs) f p = (List.prod <| List.map (fun i => 
       let i := @Fin.ofNat' n (neZero_iff.2 hne) i
       let ω := ωs i 
-      acc * if f i ≠ p.eval ω then (X - (Polynomial.C ω)) else X) (C 1) (List.range n)  := by
+      if f i ≠ p.eval ω then (X - (Polynomial.C ω)) else X) (List.range n) ) := by
   rcases n with n | n <;> try simp at hne 
   simp [ElocPoly]
 
@@ -46,69 +46,64 @@ lemma eloc_poly_two {f : Fin 2 → F} {ωs : Fin 2 → F} {p : Polynomial F} :
            else (X - C (ωs 0)) * (X - C (ωs 1)) := by
   simp [ElocPoly, List.range_succ]
 
-lemma eloc_poly_succ {n : ℕ} [NeZero n]
-  {f : Fin (n + 1) → F} {ωs : Fin (n + 1) → F} {p : Polynomial F} {x : F} :
+lemma eloc_poly_succ {n : ℕ} 
+  {f : Fin (n + 1) → F} {ωs : Fin (n + 1) → F} {p : Polynomial F} :
   ElocPoly (ωs := ωs) f p = 
-    (ElocPoly (ωs := ωs ∘ Fin.castSucc) (f ∘ Fin.castSucc) p) 
-      * (let i := Fin.ofNat' n.succ n
+      (ElocPoly (ωs := ωs ∘ Fin.castSucc) (f ∘ Fin.castSucc) p)* (let i := Fin.last n
       let ω := ωs i 
       if f i ≠ p.eval ω then (X - (Polynomial.C ω)) else X) := by
-  have hn := NeZero.ne n 
-  revert f ωs p x hn
-  induction n with
-  | zero => 
-    aesop
-  | succ n ih => 
-    intro f ωs p x hn
-    by_cases h_n_z : n = 0
-    · subst h_n_z 
-      simp [eloc_poly_two]
-    · conv =>
-        lhs 
-        unfold ElocPoly 
-        rfl 
+  conv => 
+    lhs 
+    unfold ElocPoly; rfl
+  rcases n with n | n 
+  · simp [ElocPoly, List.range_succ]
+  · simp only [Nat.succ_eq_add_one, Fin.ofNat'_eq_cast, ne_eq, ite_not, ite_mul]
+    rw [List.range_succ]
+    have h : Fin.last n.succ = ↑n + 1 := by
+      apply Fin.ext
       simp
-      rw [List.range_succ]
+      rw [Fin.val_add_one] 
+      have h : ↑n ≠ Fin.last n.succ := by
+        intro contr
+        have h : (↑n : Fin (n + 1 +1)).val = (Fin.last n.succ).val := by
+          rw [contr]
+        simp [Fin.last] at h
+        rw [Nat.mod_eq_of_lt (by omega)] at h
+        omega
+      simp [h]
+      rw [Nat.mod_eq_of_lt (by omega)]  
+    rw [h]
+    simp 
+    by_cases hif : f (↑n + 1) = eval (ωs (↑n + 1)) p 
+    · simp [hif]
+      rw [eloc_poly_nonzero_def (by omega)]
       simp
-      by_cases hif :f (↑n + 1) = eval (ωs (↑n + 1)) p
-      · simp [hif]
-        rw [List.range_succ]
-        simp
-        by_cases hif : f ↑n = eval (ωs ↑n) p
-        · simp [hif]
-          have hhh 
-            := eloc_poly_nonzero_def 
-                (p := p) 
-                (f := f ∘ Fin.castSucc ∘ Fin.castSucc)
-                (ωs := ωs ∘ Fin.castSucc ∘ Fin.castSucc) h_n_z
-          simp at hhh
-          let f' := λ (acc : F[X]) (i : ℕ) ↦
-                      if (f (↑i : Fin (n + 1 + 1))) = (eval (ωs ↑i) p)
-                      then acc * X
-                      else acc * (X - C (ωs ↑i))
-          rw [List.foldl_ext (g := f')] at hhh
-
-
-
-
-
-
-
-
-
-
-
-    
-    
-
-
-
-
-
-
-
-
-  
+      rw [List.prod_eq_foldl, List.prod_eq_foldl]
+      apply congr 
+      rfl 
+      rw [List.map_eq_map_iff]
+      intro i hi
+      have h_i_lt : i < n.succ := by aesop
+      have hh: (↑i : Fin (n+1+1)) = (↑i : Fin (n+1)).castSucc := by 
+        apply Fin.ext
+        simp [Fin.castSucc, Fin.castAdd, Fin.castLE, Fin.natCast_def]
+        rw [Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+      rw [hh]
+    · simp [hif]
+      left
+      simp [ElocPoly]
+      rw [List.prod_eq_foldl, List.prod_eq_foldl]
+      apply congr 
+      rfl 
+      rw [List.map_eq_map_iff]
+      intro i hi
+      have h_i_lt : i < n.succ := by aesop
+      have hh: (↑i : Fin (n+1+1)) = (↑i : Fin (n+1)).castSucc := by 
+        apply Fin.ext
+        simp [Fin.castSucc, Fin.castAdd, Fin.castLE, Fin.natCast_def]
+        rw [Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+      rw [hh]
+ 
 lemma roots_of_eloc_poly {f : Fin n → F} {p : Polynomial F} {x : F} 
   (hne : x ≠ 0) 
     (h : (ElocPoly (ωs := ωs) f p).eval x = 0) : 
