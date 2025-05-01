@@ -104,16 +104,27 @@ lemma eloc_poly_succ {n : ℕ}
         rw [Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
       rw [hh]
  
-lemma roots_of_eloc_poly {f : Fin n → F} {p : Polynomial F} {x : F} 
-  (hne : x ≠ 0) 
+lemma roots_of_eloc_poly {n : ℕ} {f : Fin n → F} {ωs : Fin n → F} {p : Polynomial F} {x : F} 
+  (hne : x ≠ 0)  
     (h : (ElocPoly (ωs := ωs) f p).eval x = 0) : 
   ∃ i : Fin n, f i ≠ p.eval (ωs i)  := by
-  have hn := NeZero.ne n 
   revert f p x ωs 
   induction n with
   | zero =>
     aesop
   | succ n ih =>
     intro ωs f p x hne heval
-    simp [ElocPoly] at heval
-  
+    rw [eloc_poly_succ
+    , Polynomial.eval_mul
+    , mul_eq_zero] at heval
+    rcases heval with heval | heval
+    · specialize (ih hne heval)
+      rcases ih with ⟨i, ih⟩
+      exists i
+      simp at ih
+      simp [ih]
+    · simp at heval
+      by_cases hif : ωs (Fin.last n) = eval (f (Fin.last n)) p
+        <;> simp [hif] at heval
+      · tauto
+      · exists (Fin.last n)
