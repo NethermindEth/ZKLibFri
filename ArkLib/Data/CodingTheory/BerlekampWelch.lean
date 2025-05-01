@@ -128,3 +128,36 @@ lemma roots_of_eloc_poly {n : ℕ} {f : Fin n → F} {ωs : Fin n → F} {p : Po
         <;> simp [hif] at heval
       · tauto
       · exists (Fin.last n)
+
+lemma errors_are_roots_of_eloc_poly {n : ℕ} {f : Fin n → F} {ωs : Fin n → F} {p : Polynomial F} {i : Fin n} 
+  (hne : ωs i ≠ 0)
+  (h : f i ≠ p.eval (ωs i)) :
+  (ElocPoly (ωs := ωs) f p).eval (ωs i) = 0 := by
+  revert f ωs i p
+  induction n with
+  | zero => simp [ElocPoly]
+  | succ n ih => 
+    intro f ωs p i hne h
+    rw [eloc_poly_succ]
+    simp [Polynomial.eval_mul]
+    by_cases hi : i = Fin.last n
+    · subst hi
+      simp [h]
+    · have hi_coe : ∃ j : Fin n, i = Fin.castSucc j := by
+          exists ⟨i, by {
+              have hn : i ≠ Fin.last n := by simp [hi]
+              rw [←Fin.lt_last_iff_ne_last] at hn
+              aesop
+          }⟩
+      rcases hi_coe with ⟨j, hi_coe⟩
+      subst hi_coe
+      have hj : ωs j.castSucc = (ωs ∘ Fin.castSucc) j := by rfl
+      rw [hj]
+      by_cases hif : f (Fin.last n) = eval (ωs (Fin.last n)) p 
+        <;> try simp only [hif, ite_true, ite_false, Polynomial.eval_mul, mul_eq_zero]
+      · left ; apply ih 
+         <;> try simp [Function.comp, hne, h]
+      · left ; apply ih 
+         <;> try simp [Function.comp, hne, h]
+
+
