@@ -104,7 +104,12 @@ lemma eloc_poly_succ {n : ℕ}
         rw [Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
       rw [hh]
  
-lemma roots_of_eloc_poly {n : ℕ} {f : Fin n → F} {ωs : Fin n → F} {p : Polynomial F} {x : F} 
+lemma roots_of_eloc_poly 
+  {n : ℕ} 
+  {f : Fin n → F} 
+  {ωs : Fin n → F} 
+  {p : Polynomial F} 
+  {x : F} 
   (hne : x ≠ 0)  
     (h : (ElocPoly (ωs := ωs) f p).eval x = 0) : 
   ∃ i : Fin n, f i ≠ p.eval (ωs i)  := by
@@ -129,7 +134,12 @@ lemma roots_of_eloc_poly {n : ℕ} {f : Fin n → F} {ωs : Fin n → F} {p : Po
       · tauto
       · exists (Fin.last n)
 
-lemma errors_are_roots_of_eloc_poly {n : ℕ} {f : Fin n → F} {ωs : Fin n → F} {p : Polynomial F} {i : Fin n} 
+lemma errors_are_roots_of_eloc_poly 
+  {n : ℕ} 
+  {f : Fin n → F} 
+  {ωs : Fin n → F} 
+  {p : Polynomial F} 
+  {i : Fin n} 
   (hne : ωs i ≠ 0)
   (h : f i ≠ p.eval (ωs i)) :
   (ElocPoly (ωs := ωs) f p).eval (ωs i) = 0 := by
@@ -160,4 +170,59 @@ lemma errors_are_roots_of_eloc_poly {n : ℕ} {f : Fin n → F} {ωs : Fin n →
       · left ; apply ih 
          <;> try simp [Function.comp, hne, h]
 
+variable 
+  {n : ℕ} 
+  {f : Fin n → F} 
+  {ωs : Fin n → F} 
+  {p : Polynomial F} 
 
+@[simp]
+lemma eloc_poly_ne_zero :
+    ElocPoly (ωs := ωs) f p ≠ 0 := by
+  revert f ωs p
+  induction n with
+  | zero => simp [ElocPoly]
+  | succ n ih => 
+    intros f ωs p
+    rw [eloc_poly_succ]
+    apply mul_ne_zero ih
+    simp
+    by_cases hif : f (Fin.last n) = eval (ωs (Fin.last n)) p 
+      <;> try simp [hif]
+    intro contr 
+    have h : X = C (ωs (Fin.last n)):= by 
+      conv =>
+        rhs
+        rw [←zero_add (C _), ←contr]
+        rfl
+      ring
+    exact Polynomial.X_ne_C _ h
+
+@[simp]
+lemma eloc_poly_deg 
+  {n : ℕ} 
+  {f : Fin n → F} 
+  {ωs : Fin n → F} 
+  {p : Polynomial F} 
+  : (ElocPoly (ωs := ωs) f p).natDegree = n := by
+  revert f ωs p 
+  induction n with
+  | zero => simp [ElocPoly]
+  | succ n ih => 
+    intro f ωs p 
+    rw [eloc_poly_succ
+    , Polynomial.natDegree_mul (by simp) (by {
+      simp
+      by_cases hif: f (Fin.last n) = eval (ωs (Fin.last n)) p
+        <;> try simp [hif]
+      intro contr 
+      have h : X = C (ωs (Fin.last n)):= by 
+        conv =>
+          rhs
+          rw [←zero_add (C _), ←contr]
+          rfl
+        ring
+      exact Polynomial.X_ne_C _ h
+    })]
+    by_cases hif: f (Fin.last n) = eval (ωs (Fin.last n)) p
+      <;> try simp [hif, ih]
