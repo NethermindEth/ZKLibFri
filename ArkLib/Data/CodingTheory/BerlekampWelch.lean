@@ -72,24 +72,9 @@ lemma errors_are_roots_of_elocPoly {i : ℕ}
 
 @[simp]
 lemma elocPoly_ne_zero : ElocPoly n ωs f p ≠ 0 := by
-  revert f ωs p
-  induction n with
-  | zero => simp [ElocPoly]
-  | succ n ih => 
-    intros f ωs p
-    rw [elocPoly_succ]
-    apply mul_ne_zero ih
-    simp
-    by_cases hif : f (Fin.last n) = eval (ωs (Fin.last n)) p 
-      <;> try simp [hif]
-    intro contr 
-    have h : X = C (ωs (Fin.last n)):= by 
-      conv =>
-        rhs
-        rw [←zero_add (C _), ←contr]
-        rfl
-      ring
-    exact Polynomial.X_ne_C _ h
+  induction' n with n _
+  · simp
+  · aesop (add simp [sub_eq_zero]) (add safe forward (Polynomial.X_ne_C (ωs n)))
 
 @[simp]
 lemma eloc_poly_deg 
