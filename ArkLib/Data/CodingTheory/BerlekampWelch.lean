@@ -242,12 +242,17 @@ lemma eloc_poly_deg
               tauto
             }
             omega
-          }⟩,  by aesop⟩, by simp [Function.LeftInverse], by simp [Function.RightInverse, Function.LeftInverse] ⟩
+          }⟩,  by aesop⟩
+          , by simp [Function.LeftInverse]
+          , by simp [Function.RightInverse
+          , Function.LeftInverse] ⟩
     · simp [hif, hammingDist]
       symm
       rw [Finset.card_eq_succ]
       exists (Fin.last n)
-      exists Finset.filter (fun i => ¬f i = eval (ωs i) p ∧ i ≠ Fin.last n) (Fintype.elems (α := Fin n.succ)) 
+      exists Finset.filter 
+        (fun i => ¬f i = eval (ωs i) p ∧ i ≠ Fin.last n) 
+        (Fintype.elems (α := Fin n.succ)) 
       apply And.intro <;> try simp
       apply And.intro
       · apply Finset.ext
@@ -262,5 +267,34 @@ lemma eloc_poly_deg
         · simp at hhh
           simp
           by_cases haa : a = Fin.last n <;> try simp [haa, Fintype.elems, hhh]
-      · 
-
+      · apply Finset.card_eq_of_equiv
+        simp
+        exact ⟨fun ⟨x, hx⟩ => ⟨⟨x.val,by {
+              have hx_le : x.val ≤ n := Fin.le_last _
+              have hx_ne : x.val ≠ n := by {
+                intro contr
+                have hx_eq : x = Fin.last n := by {
+                  apply Fin.ext
+                  simp [contr]
+                }
+                subst hx_eq
+                tauto
+              }
+              omega
+            }⟩, by simp [hx]⟩
+          , fun ⟨x, hx⟩ => ⟨⟨x, Nat.lt_succ_of_lt (by simp)⟩,  
+              by {
+                simp [Fintype.elems]
+                rcases x with ⟨x, hx_lt⟩ 
+                dsimp at hx
+                simp [hx]
+                intro contr
+                have h : x = n := by {
+                  rw [←Fin.val_inj] at contr
+                  exact contr
+                }
+                omega
+              }⟩
+              , by simp [Function.LeftInverse]
+              , by simp [Function.RightInverse
+              , Function.LeftInverse] ⟩
