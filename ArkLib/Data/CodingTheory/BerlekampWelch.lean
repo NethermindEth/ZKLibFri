@@ -7,183 +7,77 @@ import Mathlib.Data.Finset.Insert
 import ArkLib.Data.CodingTheory.Basic
 
 variable {F : Type} [Field F] [DecidableEq F]
+         {n : ℕ}
 
 open Polynomial
 
-noncomputable def ElocPoly {n : ℕ} {ωs : Fin n → F} 
-  (f : Fin n → F) (p : Polynomial F) : Polynomial F
-  := match n with 
-  | 0 => C 1
-  | n + 1 => List.prod <| List.map (fun i => 
-      let i := Fin.ofNat' n.succ i
-      let ω := ωs i 
-      if f i ≠ p.eval ω then (X - (Polynomial.C ω)) else Polynomial.C 1) (List.range n.succ) 
+noncomputable def ElocPoly (n : ℕ) (ωs f : ℕ → F) (p : Polynomial F) : Polynomial F :=
+  List.prod <| (List.range n).map fun i => 
+    if f i ≠ p.eval (ωs i)
+    then X - (C (ωs i))
+    else C 1
 
-lemma eloc_poly_nonzero_def {n : ℕ} {ωs : Fin n → F} 
-  {f : Fin n → F} {p : Polynomial F} (hne: n ≠ 0) :
-    ElocPoly (ωs := ωs) f p = (List.prod <| List.map (fun i => 
-      let i := @Fin.ofNat' n (neZero_iff.2 hne) i
-      let ω := ωs i 
-      if f i ≠ p.eval ω then (X - (Polynomial.C ω)) else Polynomial.C 1) (List.range n) ) := by
-  rcases n with n | n <;> try simp at hne 
-  simp [ElocPoly]
+section
+
+variable {f ωs : ℕ → F} {p : Polynomial F}
 
 @[simp]
-lemma eloc_poly_zero {f : Fin 0 → F} {ωs : Fin 0 → F} {p : Polynomial F} :
-    ElocPoly (ωs := ωs) f p = C 1 := by simp [ElocPoly]
+lemma elocPoly_zero : ElocPoly 0 ωs f p = C 1 := rfl
 
 @[simp]
-lemma eloc_poly_one {f : Fin 1 → F} {ωs : Fin 1 → F} {p : Polynomial F} :
-    ElocPoly (ωs := ωs) f p = let i := Fin.ofNat' 1 0
-      let ω := ωs i 
-      if f i ≠ p.eval ω then (X - (Polynomial.C ω)) else Polynomial.C 1 := by
+lemma elocPoly_one :
+  ElocPoly 1 ωs f p = if f 0 ≠ p.eval (ωs 0) then X - (C (ωs 0)) else C 1 := by
   simp [ElocPoly, List.range_succ]
 
-lemma eloc_poly_two {f : Fin 2 → F} {ωs : Fin 2 → F} {p : Polynomial F} :
-    ElocPoly (ωs := ωs) f p = 
-      if f 1 = eval (ωs 1) p 
-      then if f 0 = eval (ωs 0) p then Polynomial.C 1 
-           else (X - C (ωs 0)) 
-      else if f 0 = eval (ωs 0) p then (X - C (ωs 1)) 
-           else (X - C (ωs 0)) * (X - C (ωs 1)) := by
+@[simp]
+lemma elocPoly_two :
+  ElocPoly 2 ωs f p = 
+  if f 1 = eval (ωs 1) p 
+  then if f 0 = eval (ωs 0) p then C 1 
+       else X - C (ωs 0)
+  else if f 0 = eval (ωs 0) p then X - C (ωs 1)
+       else (X - C (ωs 0)) * (X - C (ωs 1)) := by
   simp [ElocPoly, List.range_succ]
 
-lemma eloc_poly_succ {n : ℕ} 
-  {f : Fin (n + 1) → F} {ωs : Fin (n + 1) → F} {p : Polynomial F} :
-  ElocPoly (ωs := ωs) f p = 
-      (ElocPoly (ωs := ωs ∘ Fin.castSucc) (f ∘ Fin.castSucc) p)* (let i := Fin.last n
-      let ω := ωs i 
-      if f i ≠ p.eval ω then (X - (Polynomial.C ω)) else Polynomial.C 1) := by
-  conv => 
-    lhs 
-    unfold ElocPoly; rfl
-  rcases n with n | n 
-  · simp [ElocPoly, List.range_succ]
-  · simp only [Nat.succ_eq_add_one, Fin.ofNat'_eq_cast, ne_eq, ite_not, ite_mul]
-    rw [List.range_succ]
-    have h : Fin.last n.succ = ↑n + 1 := by
-      apply Fin.ext
-      simp
-      rw [Fin.val_add_one] 
-      have h : ↑n ≠ Fin.last n.succ := by
-        intro contr
-        have h : (↑n : Fin (n + 1 +1)).val = (Fin.last n.succ).val := by
-          rw [contr]
-        simp [Fin.last] at h
-        rw [Nat.mod_eq_of_lt (by omega)] at h
-        omega
-      simp [h]
-      rw [Nat.mod_eq_of_lt (by omega)]  
-    rw [h]
-    simp 
-    by_cases hif : f (↑n + 1) = eval (ωs (↑n + 1)) p 
-    · simp [hif]
-      rw [eloc_poly_nonzero_def (by omega)]
-      simp
-      rw [List.prod_eq_foldl, List.prod_eq_foldl]
-      apply congr 
-      rfl 
-      rw [List.map_eq_map_iff]
-      intro i hi
-      have h_i_lt : i < n.succ := by aesop
-      have hh: (↑i : Fin (n+1+1)) = (↑i : Fin (n+1)).castSucc := by 
-        apply Fin.ext
-        simp [Fin.castSucc, Fin.castAdd, Fin.castLE, Fin.natCast_def]
-        rw [Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
-      rw [hh]
-    · simp [hif]
-      left
-      simp [ElocPoly]
-      rw [List.prod_eq_foldl, List.prod_eq_foldl]
-      apply congr 
-      rfl 
-      rw [List.map_eq_map_iff]
-      intro i hi
-      have h_i_lt : i < n.succ := by aesop
-      have hh: (↑i : Fin (n+1+1)) = (↑i : Fin (n+1)).castSucc := by 
-        apply Fin.ext
-        simp [Fin.castSucc, Fin.castAdd, Fin.castLE, Fin.natCast_def]
-        rw [Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
-      rw [hh]
- 
-lemma roots_of_eloc_poly 
-  {n : ℕ} 
-  {f : Fin n → F} 
-  {ωs : Fin n → F} 
-  {p : Polynomial F} 
-  {x : F} 
-  (h : (ElocPoly (ωs := ωs) f p).eval x = 0) : 
-  ∃ i : Fin n, f i ≠ p.eval (ωs i)  := by
-  revert f p x ωs 
-  induction n with
-  | zero =>
-    aesop
-  | succ n ih =>
-    intro ωs f p x heval
-    rw [eloc_poly_succ
-    , Polynomial.eval_mul
-    , mul_eq_zero] at heval
-    rcases heval with heval | heval
-    · specialize (ih heval)
-      rcases ih with ⟨i, ih⟩
-      exists i
-      simp at ih
-      simp [ih]
-    · simp at heval
-      by_cases hif : ωs (Fin.last n) = eval (f (Fin.last n)) p
-        <;> simp [hif] at heval
-      · tauto
+@[simp]
+lemma elocPoly_succ :
+  ElocPoly (n + 1) ωs f p =
+  ElocPoly n ωs f p * 
+    if f n ≠ p.eval (ωs n)
+    then X - (C (ωs n))
+    else C 1 := by
+  conv_lhs => unfold ElocPoly
+  rw [List.range_succ, List.map_append, List.prod_append, ←ElocPoly.eq_def]
+  simp
 
-lemma errors_are_roots_of_eloc_poly 
-  {n : ℕ} 
-  {f : Fin n → F} 
-  {ωs : Fin n → F} 
-  {p : Polynomial F} 
-  {i : Fin n} 
-  (h : f i ≠ p.eval (ωs i)) :
-  (ElocPoly (ωs := ωs) f p).eval (ωs i) = 0 := by
-  revert f ωs i p
-  induction n with
-  | zero => simp [ElocPoly]
-  | succ n ih => 
-    intro f ωs p i h
-    rw [eloc_poly_succ]
-    simp [Polynomial.eval_mul]
-    by_cases hi : i = Fin.last n
-    · subst hi
-      simp [h]
-    · have hi_coe : ∃ j : Fin n, i = Fin.castSucc j := by
-          exists ⟨i, by {
-              have hn : i ≠ Fin.last n := by simp [hi]
-              rw [←Fin.lt_last_iff_ne_last] at hn
-              aesop
-          }⟩
-      rcases hi_coe with ⟨j, hi_coe⟩
-      subst hi_coe
-      have hj : ωs j.castSucc = (ωs ∘ Fin.castSucc) j := by rfl
-      rw [hj]
-      by_cases hif : f (Fin.last n) = eval (ωs (Fin.last n)) p 
-        <;> try simp only [hif, ite_true, ite_false, Polynomial.eval_mul, mul_eq_zero]
-      · apply ih 
-         ; try simp [Function.comp, h]
-      · left ; apply ih 
-         ; try simp [Function.comp, h]
+lemma roots_of_eloc_poly {x : F}
+  (h : (ElocPoly n ωs f p).eval x = 0) : 
+  ∃ i, i < n ∧ f i ≠ p.eval (ωs i) := by
+  induction' n with n ih generalizing x
+  · aesop
+  · rw [elocPoly_succ, Polynomial.eval_mul, mul_eq_zero] at h
+    rcases h with heval | heval
+    · obtain ⟨i, _⟩ := ih heval
+      aesop (add safe [(by existsi i), (by omega)])
+    · aesop (add safe (by use n))
 
-variable 
-  {n : ℕ} 
-  {f : Fin n → F} 
-  {ωs : Fin n → F} 
-  {p : Polynomial F} 
+lemma errors_are_roots_of_elocPoly {i : ℕ}
+  (hi : i < n) (h : f i ≠ p.eval (ωs i)) : (ElocPoly n ωs f p).eval (ωs i) = 0 := by
+  induction' n with n ih
+  · aesop
+  · by_cases i = n
+    · aesop
+    · have : i < n := by omega
+      aesop
 
 @[simp]
-lemma eloc_poly_ne_zero :
-    ElocPoly (ωs := ωs) f p ≠ 0 := by
+lemma elocPoly_ne_zero : ElocPoly n ωs f p ≠ 0 := by
   revert f ωs p
   induction n with
   | zero => simp [ElocPoly]
   | succ n ih => 
     intros f ωs p
-    rw [eloc_poly_succ]
+    rw [elocPoly_succ]
     apply mul_ne_zero ih
     simp
     by_cases hif : f (Fin.last n) = eval (ωs (Fin.last n)) p 
@@ -298,3 +192,5 @@ lemma eloc_poly_deg
               , by simp [Function.LeftInverse]
               , by simp [Function.RightInverse
               , Function.LeftInverse] ⟩
+
+end
