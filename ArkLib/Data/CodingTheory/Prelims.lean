@@ -85,7 +85,7 @@ end Embedding
 namespace Affine
 
 /--
-Affine line between two vectors with coefficients in a semiring.
+affine line between vectors `u` and `v`.
 -/
 def line [Ring F] (u v : Fin ι → F) : Set (Fin ι → F) :=
   {x | ∃ γ : F, x = γ • u + (1 - γ) • v}
