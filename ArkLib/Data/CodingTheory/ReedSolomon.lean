@@ -17,7 +17,6 @@ import Mathlib.Data.FinEnum
   list-decoding.
 -/
 
-
 namespace ReedSolomon
 
 open Polynomial
