@@ -298,3 +298,94 @@ lemma eloc_poly_deg
               , by simp [Function.LeftInverse]
               , by simp [Function.RightInverse
               , Function.LeftInverse] ⟩
+
+noncomputable def E {n : ℕ} {ωs : Fin n → F} 
+  (f : Fin n → F) (p : Polynomial F) (e : ℕ) : Polynomial F :=
+  Polynomial.X ^ (e - (Δ₀(f, p.eval ∘ ωs) : ℕ)) * ElocPoly (ωs := ωs) f p
+
+lemma E_natDegree {e : ℕ} (h : (Δ₀(f, p.eval ∘ ωs) : ℕ) < e) : (E (ωs := ωs) f p e).natDegree = e  
+  := by
+  unfold E
+  rw [Polynomial.natDegree_mul (by aesop) (by aesop)]
+  simp
+  rw [Nat.sub_add_cancel (by omega)]
+
+lemma E_ne_0 {e : ℕ}  : (E (ωs := ωs) f p e) ≠ 0 := by
+  unfold E
+  intro contr
+  rw [mul_eq_zero] at contr
+  rcases contr with contr | contr
+    <;> try simp at contr 
+
+noncomputable def Q {n : ℕ} {ωs : Fin n → F} 
+  (f : Fin n → F) (p : Polynomial F) (e : ℕ) : Polynomial F :=
+  p * (E (ωs := ωs) f p e)
+
+lemma Q_natDegree 
+  {e : ℕ} 
+  (h : (Δ₀(f, p.eval ∘ ωs) : ℕ) < e) : 
+  (Q (ωs := ωs) f p e).natDegree ≤ e + p.natDegree := by
+  unfold Q
+  by_cases h0 : p = 0 
+  · rw [h0]
+    simp
+  · rw [Polynomial.natDegree_mul (by aesop) (by aesop (add simp E_ne_0))
+    , E_natDegree h]
+    omega
+
+lemma Q_ne_0 
+  {e : ℕ}
+  (hne : p ≠ 0)
+  : Q (ωs := ωs) f p e ≠ 0 := by
+  unfold Q 
+  intro contr
+  rw [mul_eq_zero] at contr
+  rcases contr with contr | contr
+    <;> try tauto
+  exact E_ne_0 contr
+  
+lemma y_i_E_omega_i_eq_Q_omega_i {e : ℕ} {i : Fin n} :
+  (f i) * (E (ωs := ωs) f p e).eval (ωs i) = (Q (ωs := ωs) f p e).eval (ωs i) := by
+  unfold Q E
+  conv =>
+    rhs
+    simp 
+    rfl
+  by_cases hi : f i = p.eval (ωs i) <;> try simp [hi]
+  right
+  exact errors_are_roots_of_eloc_poly hi
+
+lemma E_and_Q_unique {e : ℕ} {E' Q' : Polynomial F} 
+  (hnz_e : E' ≠ 0) (hnz_q : Q' ≠ 0)
+  (hdeg_e : E'.natDegree = e) (hdeg_q : Q'.natDegree ≤ e + p.natDegree)
+  (h : ∀ i : Fin n, 
+    (f i) * E'.eval (ωs i) = Q'.eval (ωs i))
+  (he : 2 * e < n - p.natDegree)
+  (h_ham : (Δ₀(f, p.eval ∘ ωs) : ℕ) < e)
+  (hp : p ≠ 0)
+  : (E (ωs := ωs) f p e) * Q' = E' * (Q (ωs := ωs) f p e) := by
+  let R := E (ωs := ωs) f p e * Q' - E' * Q (ωs := ωs) f p e 
+  have hr_deg : R.natDegree ≤ 2 * e + p.natDegree := by
+    simp [R]
+    trans 
+    apply Polynomial.natDegree_add_le
+    rw  [Nat.max_le]
+    rw [Polynomial.natDegree_mul
+       , Polynomial.natDegree_neg
+       , Polynomial.natDegree_mul] <;> try tauto
+    simp [E_natDegree h_ham]
+    apply And.intro
+    · trans
+      apply Nat.add_le_add_left hdeg_q
+      omega 
+    · rw [hdeg_e]
+      trans
+      apply Nat.add_le_add_left
+      apply Q_natDegree h_ham
+      omega
+    exact Q_ne_0 hp 
+    exact E_ne_0
+
+     
+
+
