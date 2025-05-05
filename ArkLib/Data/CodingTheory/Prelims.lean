@@ -1,3 +1,9 @@
+/-
+Copyright (c) 2024-2025 ArkLib Contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Katerina Hristova, František Silváši
+-/
+
 import Mathlib.Algebra.Module.Submodule.Defs
 import Mathlib.Data.Matrix.Defs
 import Mathlib.Data.Matrix.RowCol
@@ -85,5 +91,3 @@ def line [Ring F] (u v : Fin ι → F) : Set (Fin ι → F) :=
   {x | ∃ γ : F, x = γ • u + (1 - γ) • v}
 
 end Affine
-
-end
