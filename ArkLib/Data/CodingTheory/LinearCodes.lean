@@ -1,8 +1,21 @@
+/-
+Copyright (c) 2024-2025 ArkLib Contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Katerina Hristova, František Silváši, Julian Sutherland
+-/
+
 import Mathlib.Data.Matrix.Rank
 import Mathlib.InformationTheory.Hamming
 import Mathlib.LinearAlgebra.Matrix.ToLin
 import Mathlib.Algebra.Module.Submodule.Range
 import Mathlib.Algebra.Module.Submodule.Defs
+
+/-!
+  Definition of a linear code, minimal distance of a linear code, length, dimension and rate.
+  Linear codes defined by a generator matrices and rephrase of dimension in this framework.
+  Definition of the weight of a vector, statement and proof of the fact that the minimal
+  distance of a linear code equals the minimal weight taken over the set of codewords.
+-/
 
 open Classical
 open Finset
@@ -76,6 +89,9 @@ lemma minDist_eq_minWtCodewords {LC : LinearCode ι F} : minDist LC = minWtCodew
   refine congrArg _ (Set.ext fun _ ↦ ⟨fun ⟨u, _, v, _⟩ ↦ ⟨u - v, ?p₁⟩, fun _ ↦ ⟨0, ?p₂⟩⟩) <;>
   aesop (add simp [hammingDist_eq_wt_sub, sub_eq_zero])
 
+/--
+Singleton Bound Theorem.
+-/
 theorem singletonBound (LC : LinearCode ι F) :
   dim LC ≤ length LC - minDist LC + 1 := by sorry
 
