@@ -248,6 +248,14 @@ lemma E_ne_0 {e : ℕ} {ωs f : Fin n → F} : (E ωs f p e) ≠ 0 := by
   rcases contr with contr | contr
     <;> try simp at contr 
 
+lemma errors_are_roots_of_E {i : Fin n} {e} {ωs f : Fin n → F}
+  (h : f i ≠ p.eval (ωs i)) : (E ωs f p e).eval (ωs i) = 0  := by
+  unfold E 
+  aesop 
+    (erase simp [BerlekampWelch.elocPolyF_eq_elocPoly']) 
+    (add simp [BerlekampWelch.errors_are_roots_of_elocPolyF])
+
+
 noncomputable def Q {n : ℕ} (ωs : Fin n → F) 
   (f : Fin n → F) (p : Polynomial F) (e : ℕ) : Polynomial F :=
   p * (E ωs f p e)
@@ -272,7 +280,7 @@ lemma Q_ne_0
     (add simp [E_ne_0])
 
 lemma y_i_E_omega_i_eq_Q_omega_i {e : ℕ} {i : Fin n} {ωs f : Fin n → F}:
-  (f i) * (E ωs f p e).eval (ωs i) = (Q ωs f p e).eval (ωs i) := by
+  (Q ωs f p e).eval (ωs i) = (f i) * (E ωs f p e).eval (ωs i) := by
   unfold Q E
   by_cases hi : f i = p.eval (ωs i)
   · aesop 
@@ -289,6 +297,7 @@ lemma E_and_Q_unique {e : ℕ}
     (f i) * E'.eval (ωs i) = Q'.eval (ωs i))
   (he : 2 * e < n - p.natDegree)
   (h_ham : (Δ₀(f, p.eval ∘ ωs) : ℕ) < e)
+  (h_diff : Function.Injective ωs)
   (hp : p ≠ 0)
   : (E ωs f p e) * Q' = E' * (Q ωs f p e) := by
   let R := E (ωs := ωs) f p e * Q' - E' * Q (ωs := ωs) f p e 
@@ -312,8 +321,34 @@ lemma E_and_Q_unique {e : ℕ}
       omega
     exact Q_ne_0 hp 
     exact E_ne_0
+  by_cases hr : R = 0 
+  · simp [R] at hr 
+    rw [←add_zero (E' * (Q _ _ _ _))
+    , ←hr]
+    ring
+  · let errors := Multiset.ofList $ List.map ωs  
+        ((List.finRange n).filter (fun i => f i ≠ p.eval (ωs i)))
+    have hsub : (⟨errors, by {
+      rw [Multiset.coe_nodup, List.nodup_map_iff h_diff]
+      simp [List.Nodup]
+      apply List.Pairwise.filter
+      aesop (add simp [List.Pairwise.filter, List.pairwise_iff_get])
+    }⟩ : Finset F).val ≤ R.roots := by
+      simp
+      aesop 
+        (add simp [Polynomial.mem_roots, errors, R])
+        (add simp [errors_are_roots_of_E])
+        (add simp [y_i_E_omega_i_eq_Q_omega_i])
 
-     
+
+
+
+      
+
+      simp [h_diff]
+    }⟩ : Finset F) ⊆ R.roots := by
+    have hcard : errors.card ≤ R.roots.card := by
+
 
 
 end
