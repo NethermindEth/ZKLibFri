@@ -5,12 +5,10 @@ import Mathlib.Algebra.Module.Submodule.Range
 import Mathlib.Algebra.Module.Submodule.Defs
 
 open Classical
+open Finset
 
-/--
-  weight of a vector
--/
-noncomputable def vector.wt {F : Type*} [Semiring F][Zero F] {ι : ℕ}
-  (v : Fin ι → F) : ℕ  := Finset.card {i | v i ≠ 0}
+noncomputable def wt {F : Type*} [Semiring F] [Zero F] {ι : ℕ}
+  (v : Fin ι → F) : ℕ := #{i | v i ≠ 0}
 
 namespace LinearCodes
 
@@ -65,43 +63,18 @@ def rate (LC : LinearCode ι F) : ℚ :=
 notation "ρ" LC => rate LC
 
 def minWtCodewords (LC : LinearCode ι F) : ℕ :=
-  sInf {w | ∃ c ∈ LC, c ≠ 0 ∧ vector.wt c = w}
+  sInf {w | ∃ c ∈ LC, c ≠ 0 ∧ wt c = w}
 
-lemma distToWt (u v : Fin ι → F) :
-  hammingDist u v = vector.wt (u - v) := by
-  rw[hammingDist, vector.wt]
-  congr 1
-  simp only [Pi.sub_apply]
-  ext i
-  simp only [ne_eq, Finset.mem_filter, Finset.mem_univ, true_and]
-  rw [@sub_eq_iff_eq_add, zero_add]
-
+lemma hammingDist_eq_wt_sub {u v : Fin ι → F} : hammingDist u v = wt (u - v) := by
+  aesop (add simp [hammingDist, wt, sub_eq_zero])
 
 /--
 The min distance of a linear code `LC` equals to the minimum of the weights of non-zero codewords.
 -/
-lemma minDistEqMinWt (LC : LinearCode ι F) :
-  minDist LC = minWtCodewords LC := by
-  rw[minDist, minWtCodewords]
-  congr 1
-  ext d
-  simp only [ne_eq, Set.mem_setOf_eq]
-  constructor
-  rintro ⟨u,hu,v,hv,hunv,hd⟩
-  rw[distToWt] at hd
-  refine ⟨u - v, Submodule.sub_mem LC hu hv, ?_, hd⟩
-  rw[sub_eq_zero]
-  exact hunv
-
-  intro h
-  rcases h with ⟨c, hc, hwt⟩
-  exists c
-  apply And.intro hc
-  exists 0
-  apply And.intro (Submodule.zero_mem _)
-  apply And.intro hwt.1
-  rw[distToWt, sub_zero]
-  exact hwt.2
+lemma minDist_eq_minWtCodewords {LC : LinearCode ι F} : minDist LC = minWtCodewords LC := by
+  unfold minDist minWtCodewords
+  refine congrArg _ (Set.ext fun _ ↦ ⟨fun ⟨u, _, v, _⟩ ↦ ⟨u - v, ?p₁⟩, fun _ ↦ ⟨0, ?p₂⟩⟩) <;>
+  aesop (add simp [hammingDist_eq_wt_sub, sub_eq_zero])
 
 theorem singletonBound (LC : LinearCode ι F) :
   dim LC ≤ length LC - minDist LC + 1 := by sorry
