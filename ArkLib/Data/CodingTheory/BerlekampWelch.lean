@@ -326,28 +326,35 @@ lemma E_and_Q_unique {e : ℕ}
     rw [←add_zero (E' * (Q _ _ _ _))
     , ←hr]
     ring
-  · let errors := Multiset.ofList $ List.map ωs  
-        ((List.finRange n).filter (fun i => f i ≠ p.eval (ωs i)))
-    have hsub : (⟨errors, by {
-      rw [Multiset.coe_nodup, List.nodup_map_iff h_diff]
-      simp [List.Nodup]
-      apply List.Pairwise.filter
-      aesop (add simp [List.Pairwise.filter, List.pairwise_iff_get])
-    }⟩ : Finset F).val ≤ R.roots := by
-      simp
-      aesop 
-        (add simp [Polynomial.mem_roots, errors, R])
-        (add simp [errors_are_roots_of_E])
-        (add simp [y_i_E_omega_i_eq_Q_omega_i])
+  · let roots := Multiset.ofList <| List.map ωs  
+        (List.finRange n)
+    have hsub : (⟨roots, by {
+        rw [Multiset.coe_nodup, List.nodup_map_iff h_diff]
+        aesop (add simp [List.Nodup, List.Pairwise.filter, List.pairwise_iff_get])
+      }⟩ : Finset F).val ⊆ R.roots := by
+      {
+        intro x hx
+        aesop (config := {warnOnNonterminal := false})
+          (add simp [Polynomial.mem_roots, roots, R])
+          (add simp [errors_are_roots_of_E])
+          (add simp [y_i_E_omega_i_eq_Q_omega_i]) 
+        rw [←h]
+        ring
+      }
+    have hcard := Polynomial.card_le_degree_of_subset_roots hsub 
+    simp [roots] at hcard
+    have contr := Nat.le_trans hcard hr_deg
+    omega
 
+
+    
+
+     
 
 
 
       
 
-      simp [h_diff]
-    }⟩ : Finset F) ⊆ R.roots := by
-    have hcard : errors.card ≤ R.roots.card := by
 
 
 
