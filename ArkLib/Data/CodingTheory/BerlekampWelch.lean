@@ -3,6 +3,8 @@ import Mathlib.Algebra.Polynomial.Basic
 import Mathlib.Algebra.Polynomial.Degree.Definitions
 import Mathlib.Algebra.Polynomial.FieldDivision
 import Mathlib.Data.Finset.Insert
+import Mathlib.Data.Matrix.Mul 
+import Mathlib.Data.Matrix.Reflection
 
 import ArkLib.Data.CodingTheory.Basic
 
@@ -367,6 +369,127 @@ lemma E_and_Q_unique {e : ℕ}
       }
     have hcard := card_le_degree_of_subset_roots hsub 
     aesop (add safe (by omega))
+
+def BerlekampWelchMatrix [NeZero n] 
+  (e : ℕ) 
+  (ωs f : Fin n → F) : Matrix (Fin n) (Fin n) F := 
+  Matrix.of (fun i j => 
+    let αᵢ := ωs i
+    if ↑j < e then (f i * αᵢ^(↑j : ℕ)) else -αᵢ^(↑j - e))
+
+def Rhs [NeZero n] (e : ℕ) (ωs f : Fin n → F) (i : Fin n) : F := 
+  let αᵢ := ωs i
+  (-(f i) * αᵢ^e)
+
+def IsBerlekampWelchSolution [NeZero n] 
+  (e : ℕ) 
+  (ωs f : Fin n → F)
+  (v : Fin n → F)
+  : Prop 
+  := Matrix.mulVec (BerlekampWelchMatrix e ωs f) v = (Rhs e ωs f)
+
+lemma is_berlekamp_welch_solution_ext [NeZero n]
+  {e : ℕ} 
+  {ωs f : Fin n → F}
+  {v : Fin n → F}
+  (h : ∀ i, (Matrix.mulVec (BerlekampWelchMatrix e ωs f) v) i 
+    = (-(f i) * (ωs i)^e) )
+  : IsBerlekampWelchSolution e ωs f v := by
+  aesop (add simp [IsBerlekampWelchSolution, Rhs])
+
+noncomputable def E_and_Q_to_a_solution (e : ℕ) (E Q : Polynomial F) (i : Fin n) : F :=
+  match (E, Q) with
+  | (⟨⟨_, f, _⟩⟩, ⟨⟨_, g, _⟩⟩) => if i < e then f i else g (i - e)
+
+@[simp]
+lemma E_and_Q_to_a_solution_coeff 
+  {e : ℕ} 
+  {E Q : Polynomial F} 
+  {i : Fin n}
+  : (E_and_Q_to_a_solution e E Q) i = if i < e then E.coeff i else Q.coeff (i - e) := by
+  rcases E with ⟨⟨_, f, _⟩⟩
+  rcases Q with ⟨⟨_, g, _⟩⟩
+  simp [E_and_Q_to_a_solution]
+
+lemma E_and_Q_are_a_solution {e k : ℕ} [NeZero n]
+  {ωs f : Fin n → F} {p : Polynomial F}
+  (h_ham : (Δ₀(f, p.eval ∘ ωs) : ℕ) < e)
+  (hp : p ≠ 0)
+  (hp_deg : p.natDegree < k - 1) 
+  (he : e < n - k + 1)
+  : IsBerlekampWelchSolution e ωs f (E_and_Q_to_a_solution e (E ωs f p e) (Q ωs f p e)) := by
+  apply is_berlekamp_welch_solution_ext
+  intro i
+  rw [←Matrix.mulVecᵣ_eq]
+  simp [Matrix.mulVecᵣ, dotProduct]
+  rw [Finset.sum_ite]
+  simp [BerlekampWelchMatrix]
+  let seg_e := insert ⟨e, by omega⟩ {x : Fin n | ↑x < e} 
+  have hhh : ∑ i_1 ∈ {x : Fin n | ↑x < e}, ωs i ^ (↑i_1 : ℕ) * (E ωs f p e).coeff ↑i_1 = 
+        ∑ i_1 ∈ seg_e, ωs i ^ (↑i_1 : ℕ) * (E ωs f p e).coeff ↑i_1 - 
+                ωs i ^ ↑e * (E ωs f p e).coeff ↑e := by
+    simp [seg_e]
+  conv =>
+    lhs
+    congr 
+    rw [Finset.sum_ite_of_true (by aesop)]
+    rw [Finset.sum_equiv (t := {x : Fin n | ↑x < e })
+      (g := fun j => f i * (ωs i ^ (↑j : ℕ) * (E ωs f p e).coeff ↑j))
+      (Equiv.refl (Fin n)) 
+      (by aesop)
+      (by {
+        intro j hj
+        rw [mul_assoc]
+        rfl
+      })]
+    rw [←Finset.mul_sum _ _ (f i)]
+    rw [hhh]
+    rw [Finset.sum_bij (t := Finset.range e.succ)
+      (i := fun a ha => a.val)
+      (hi := by 
+        aesop 
+          (add simp seg_e)
+          (add safe (by omega))
+      )
+      (i_inj := by aesop (add simp seg_e))
+      (i_surj := by {
+        simp [seg_e]
+        intro b hb 
+        rcases hb with _ | hb <;> try simp 
+        right
+        exists ⟨b, by {
+          apply Nat.lt_trans (Nat.lt_of_succ_le hb)
+          omega
+        }⟩
+      })
+      (h := by {
+        intro a ha
+        rcases a with ⟨a, h_lt⟩
+        simp
+        rfl 
+      })
+      ]
+    rw [←Polynomial.sum_eq_of_subset _ (by simp) (by {
+     intro x hx
+     simp 
+     simp at hx 
+     rw [←Polynomial.ite_le_natDegree_coeff _ _ (by {
+      sorry
+     }) ] at hx 
+     split_ifs at hx with hif 
+     rw [E_natDegree h_ham] at hif 
+     omega 
+     tauto 
+    })]
+    rw [←Polynomial.eval_eq_sum] 
+    
+ 
+
+
+
+  
+
+
 
 end
 
