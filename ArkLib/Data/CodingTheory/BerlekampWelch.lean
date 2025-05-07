@@ -228,7 +228,7 @@ lemma elocPolyF_deg {ωs f : Fin n → F} : (ElocPolyF ωs f p).natDegree = Δ�
 
 noncomputable def E {n : ℕ} (ωs : Fin n → F) 
   (f : Fin n → F) (p : Polynomial F) (e : ℕ) : Polynomial F :=
-  Polynomial.X ^ (e - (Δ₀(f, p.eval ∘ ωs) : ℕ)) * ElocPolyF (ωs := ωs) f p
+  X ^ (e - (Δ₀(f, p.eval ∘ ωs) : ℕ)) * ElocPolyF (ωs := ωs) f p
 
 lemma E_natDegree 
   {e : ℕ} 
@@ -237,7 +237,7 @@ lemma E_natDegree
   (E (ωs := ωs) f p e).natDegree = e  
   := by
   unfold E
-  rw [Polynomial.natDegree_mul (by aesop) (by aesop)]
+  rw [natDegree_mul (by aesop) (by aesop)]
   simp only [natDegree_pow, natDegree_X, mul_one, elocPolyF_deg] 
   rw [Nat.sub_add_cancel (by omega)]
 
@@ -268,7 +268,7 @@ lemma Q_natDegree
   by_cases h0 : p = 0   
   · aesop
   · aesop 
-      (add simp [ Polynomial.natDegree_mul, E_ne_0, E_natDegree]) 
+      (add simp [ natDegree_mul, E_ne_0, E_natDegree]) 
       (add safe (by omega))
 
 lemma Q_ne_0 
@@ -300,63 +300,43 @@ lemma E_and_Q_unique {e : ℕ}
   (h_diff : Function.Injective ωs)
   (hp : p ≠ 0)
   : (E ωs f p e) * Q' = E' * (Q ωs f p e) := by
-  let R := E (ωs := ωs) f p e * Q' - E' * Q (ωs := ωs) f p e 
+  let R := E ωs f p e * Q' - E' * Q ωs f p e 
   have hr_deg : R.natDegree ≤ 2 * e + p.natDegree := by
     simp [R]
-    trans 
-    apply Polynomial.natDegree_add_le
-    rw  [Nat.max_le]
-    rw [Polynomial.natDegree_mul
-       , Polynomial.natDegree_neg
-       , Polynomial.natDegree_mul] <;> try tauto
-    simp [E_natDegree h_ham]
-    apply And.intro
-    · trans
-      apply Nat.add_le_add_left hdeg_q
-      omega 
-    · rw [hdeg_e]
-      trans
-      apply Nat.add_le_add_left
-      apply Q_natDegree h_ham
-      omega
-    exact Q_ne_0 hp 
-    exact E_ne_0
+    apply Nat.le_trans (natDegree_add_le _ _)
+    simp only [
+      natDegree_mul E_ne_0 hnz_q,
+      natDegree_neg,
+      natDegree_mul hnz_e (Q_ne_0 hp)
+      ]
+    aesop (config := {warnOnNonterminal := false})
+      (add simp [Nat.max_le, E_natDegree])
+      (add safe forward (Q_natDegree h_ham))
+      (add safe (by omega))
   by_cases hr : R = 0 
-  · simp [R] at hr 
-    rw [←add_zero (E' * (Q _ _ _ _))
-    , ←hr]
+  · rw [←add_zero (E' * (Q _ _ _ _))
+       , ←hr]
     ring
   · let roots := Multiset.ofList <| List.map ωs  
         (List.finRange n)
-    have hsub : (⟨roots, by {
-        rw [Multiset.coe_nodup, List.nodup_map_iff h_diff]
-        aesop (add simp [List.Nodup, List.Pairwise.filter, List.pairwise_iff_get])
-      }⟩ : Finset F).val ⊆ R.roots := by
+    have hsub : (⟨roots, by 
+        rw [Multiset.coe_nodup, List.nodup_map_iff h_diff]        
+         ;
+        aesop 
+          (add simp [Multiset.coe_nodup])
+          (add simp [List.Nodup, List.pairwise_iff_get])
+      ⟩ : Finset F).val ⊆ R.roots := by
       {
         intro x hx
         aesop (config := {warnOnNonterminal := false})
-          (add simp [Polynomial.mem_roots, roots, R])
+          (add simp [mem_roots, roots, R])
           (add simp [errors_are_roots_of_E])
           (add simp [y_i_E_omega_i_eq_Q_omega_i]) 
         rw [←h]
         ring
       }
-    have hcard := Polynomial.card_le_degree_of_subset_roots hsub 
-    simp [roots] at hcard
-    have contr := Nat.le_trans hcard hr_deg
-    omega
-
-
-    
-
-     
-
-
-
-      
-
-
-
+    have hcard := card_le_degree_of_subset_roots hsub 
+    aesop (add safe (by omega))
 
 end
 
