@@ -26,12 +26,17 @@ def nonsquareTranspose [Field F] (deg : ℕ) (α : Fin ι ↪ F) :
   Matrix (Fin deg) (Fin ι) F :=
   (Vandermonde.nonsquare deg α).transpose
 
+  #check Matrix.vandermonde
+
 -- also requires α_i being distinct but we already have this with the embedding Fin ι ↪ F
 -- and is generally true for RS codes.
 -- TBD: keep α implicit or explicit
 
 lemma nonsquareRank [CommRing F] {deg : ℕ} {α : Fin ι ↪ F} :
   (Vandermonde.nonsquare deg α).rank = min deg ι := by sorry
+
+lemma upper_corner_matrix_of_Van_is_Van [CommRing F] {deg : ℕ} {α : Fin ι ↪ F} (h : deg ≤ ι) :
+sorry := by sorry
 
 theorem eval_matrixOfPolynomials_eq_nsvandermonde_mul_matrixOfPolynomials
   {deg : ℕ} [CommRing F] {v : Fin ι ↪ F}
@@ -199,10 +204,12 @@ lemma rate [Field F] {deg : ℕ} [NeZero deg] {α : Fin ι ↪ F} (h : deg ≤ �
   exact h
 
 /--
-  The minimal code distance of an RS code of length `ι` and dimensio `deg` is `ι - deg + 1`
+  The minimal code distance of an RS code of length `ι` and dimension `deg` is `ι - deg + 1`
 -/
 lemma minDist [Field F] {deg : ℕ} {α : Fin ι ↪ F} :
   LinearCodes.minDist (ReedSolomon.code α deg) = ι - deg + 1 := by sorry
+
+
 
 end ReedSolomonCode
 end
