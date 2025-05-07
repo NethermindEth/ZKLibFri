@@ -254,8 +254,15 @@ lemma rate [Field F] {deg : ℕ} [NeZero deg] {α : Fin ι ↪ F} (h : deg ≤ �
 /--
 The minimal code distance of a Reed-Solomon given by the degree and domain size.
 -/
-lemma minDist [Field F] {deg : ℕ} {α : Fin ι ↪ F} :
-  LinearCodes.minDist (ReedSolomon.code α deg) = ι - deg + 1 := by sorry
+lemma minDist [Field F] {deg : ℕ} {α : Fin ι ↪ F} [NeZero deg] (h : deg ≤ ι) :
+  LinearCodes.minDist (ReedSolomon.code α deg) = ι - deg + 1 := by
+  have : NeZero ι := by constructor; aesop
+  refine le_antisymm ?p₁ ?p₂
+  case p₁ => sorry
+  case p₂ =>
+    choose c hc using show ∃ c, c ∈ ReedSolomon.code α deg by sorry
+    let p := polynomialOfCoeffs c
+    sorry
 
 
 
