@@ -159,6 +159,12 @@ protected lemma elocPoly_ne_zero : ElocPoly n ωs f p ≠ 0 := by
   · simp
   · aesop (add simp [sub_eq_zero]) (add safe forward (Polynomial.X_ne_C (ωs n)))
 
+@[simp]
+protected lemma elocPoly_leading_coeff_one : (ElocPoly n ωs f p).leadingCoeff = 1 := by
+  induction' n with n _ 
+  · simp
+  · aesop
+
 section
 
 open BerlekampWelch (liftF liftF' contract liftF_liftF'_of_lt liftF_liftF'_of_lt)
@@ -194,6 +200,10 @@ protected lemma elocPoly_leftF_leftF_eq_contract {ωs f : Fin m → F} :
   ElocPoly n (contract n ωs) (contract n f) := by
   rw [elocPoly_congr contract_eq_liftF_of_lt contract_eq_liftF_of_lt]
 
+protected lemma elocPolyF_ne_zero {ωs f : Fin m → F} :
+  ElocPolyF ωs f p ≠ 0 := by
+  aesop (add simp [BerlekampWelch.elocPoly_ne_zero])
+
 protected lemma errors_are_roots_of_elocPolyF {i : Fin n} {ωs f : Fin n → F}
   (h : f i ≠ p.eval (ωs i)) : (ElocPolyF ωs f p).eval (ωs i) = 0 := by
   rw [←BerlekampWelch.liftF_eval (f := ωs)]
@@ -201,12 +211,17 @@ protected lemma errors_are_roots_of_elocPolyF {i : Fin n} {ωs f : Fin n → F}
   rw [BerlekampWelch.errors_are_roots_of_elocPoly 
     (i.isLt) 
     (by aesop (add simp [BerlekampWelch.liftF_eval]))]
+
+@[simp]
+protected lemma elocPolyF_leading_coeff_one {ωs f : Fin n → F}
+  : (ElocPolyF ωs f p).leadingCoeff = 1 := by
+  aesop
   
 end
 
 open BerlekampWelch
   (elocPolyF_eq_elocPoly' elocPoly_leftF_leftF_eq_contract
-   elocPoly_zero elocPoly_succ liftF liftF_succ)
+   elocPoly_zero elocPoly_succ liftF liftF_succ elocPolyF_leading_coeff_one)
 
 @[simp]
 lemma elocPolyF_deg {ωs f : Fin n → F} : (ElocPolyF ωs f p).natDegree = Δ₀(f, p.eval ∘ ωs) := by
@@ -255,6 +270,21 @@ lemma errors_are_roots_of_E {i : Fin n} {e} {ωs f : Fin n → F}
     (erase simp [BerlekampWelch.elocPolyF_eq_elocPoly']) 
     (add simp [BerlekampWelch.errors_are_roots_of_elocPolyF])
 
+lemma E_is_normalized {e} {ωs f : Fin n → F}
+  : normalize (E ωs f p e) = E ωs f p e := by
+    simp only [normalize_apply]
+    conv =>
+      lhs
+      congr
+      rfl
+      simp only [E]
+      rw [normUnit_mul (by 
+        by_cases hz : (e - Δ₀(f, (fun a ↦ eval a p) ∘ ωs)) = 0 
+          <;> try simp [hz]
+      ) BerlekampWelch.elocPolyF_ne_zero]
+      simp
+      rfl
+    simp    
 
 noncomputable def Q {n : ℕ} (ωs : Fin n → F) 
   (f : Fin n → F) (p : Polynomial F) (e : ℕ) : Polynomial F :=
