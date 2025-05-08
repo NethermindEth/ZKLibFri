@@ -588,8 +588,8 @@ lemma solution_to_Q_natDegree {e k : ℕ} {v : Fin (2 * e + k) → F} :
   (solution_to_Q e k v).natDegree ≤ e + k - 1 := by
   simp [solution_to_Q, Polynomial.natDegree, Polynomial.degree]
   rw [WithBot.unbotD_le_iff] <;>
-  aesop (add safe [(by specialize this b hb), (by omega)])
-  
+  aesop (add safe [(by omega)])
+
 end
 
 end BW
