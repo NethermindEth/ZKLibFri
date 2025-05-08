@@ -1,5 +1,7 @@
 import ArkLib.Data.CodingTheory.ReedSolomon
 import ArkLib.Data.CodingTheory.LinearCodes
+import Mathlib.Data.Matrix.Defs
+import ArkLib.Data.CodingTheory.Prelims
 
 open Classical
 open Polynomial
@@ -8,35 +10,71 @@ variable {ι : ℕ}
          {F : Type*}
          {C : Set (Fin ι → F)}
 
---abbrev LinearCode.{u} (F : Type u) [Semiring F] : Type u := Submodule F ((Fin ι) → F)
-
 noncomputable section
 
 namespace Vandermonde
 /--
-  `ι x deg` Vandermonde matrix
+A non-square Vandermonde matrix.
 -/
 def nonsquare [Semiring F] (deg : ℕ) (α : Fin ι ↪ F) : Matrix (Fin ι) (Fin deg) F :=
   Matrix.of (fun i j => (α i) ^ j.1)
 
 /--
-  The transpose of a `ι x deg` Vandermonde matrix
+The transpose of a non-square Vandermonde matrix.
 -/
 def nonsquareTranspose [Field F] (deg : ℕ) (α : Fin ι ↪ F) :
   Matrix (Fin deg) (Fin ι) F :=
   (Vandermonde.nonsquare deg α).transpose
 
-  #check Matrix.vandermonde
+/--
+The maximal upper square submatrix of a Vandermonde matrix is a Vandermonde matrix.
+-/
+lemma subUpFull_of_vandermonde_is_vandermonde [CommRing F] {deg : ℕ} {α : Fin ι ↪ F} (h : deg ≤ ι)
+  :
+  Matrix.vandermonde (Embedding.restrictionToFun deg α h) =
+  Matrices.subUpFull (nonsquare deg α) h := by
+  unfold Matrices.subUpFull nonsquare Matrix.vandermonde
+  aesop
 
--- also requires α_i being distinct but we already have this with the embedding Fin ι ↪ F
--- and is generally true for RS codes.
--- TBD: keep α implicit or explicit
+/--
+The maximal left square submatrix of a Vandermonde matrix is a Vandermonde matrix.
+-/
+lemma subLeftFull_of_vandermonde_is_vandermonde [CommRing F] {deg : ℕ} {α : Fin ι ↪ F} (h : ι ≤ deg)
+  : Matrix.vandermonde α = Matrices.subLeftFull (nonsquare deg α) h := by
+  unfold Matrices.subLeftFull nonsquare Matrix.vandermonde
+  aesop
 
-lemma nonsquareRank [CommRing F] {deg : ℕ} {α : Fin ι ↪ F} :
-  (Vandermonde.nonsquare deg α).rank = min deg ι := by sorry
+/--
+The rank of a non-square Vandermonde matrix with more rows than columns is the number of columns.
+-/
+lemma nonsquare_rows_ge_cols_rank [CommRing F] [IsDomain F] {deg : ℕ} {α : Fin ι ↪ F}
+  (h : deg ≤ ι) :
+  (Vandermonde.nonsquare deg α).rank = deg := by
+   rw
+    [
+    Matrices.full_col_rank_via_rank_subUpFull (Vandermonde.nonsquare deg α) h,
+    ← subUpFull_of_vandermonde_is_vandermonde h,
+    Matrices.full_rank_iff_det_ne_zero deg (Matrix.vandermonde (Embedding.restrictionToFun deg α h))
+    , Matrix.det_vandermonde_ne_zero_iff
+    ]
+   exact Embedding.restrictionToFun_injective deg α h
 
-lemma upper_corner_matrix_of_Van_is_Van [CommRing F] {deg : ℕ} {α : Fin ι ↪ F} (h : deg ≤ ι) :
-sorry := by sorry
+/--
+The rank of a non-square Vandermonde matrix with more columns than rows is the number of rows.
+-/
+lemma nonsquare_rows_le_cols_rank [CommRing F] [IsDomain F] {deg : ℕ} {α : Fin ι ↪ F}
+  (h : ι ≤ deg) :
+  (Vandermonde.nonsquare deg α).rank = ι := by
+  rw
+    [
+    Matrices.full_row_rank_via_rank_subLeftFull (Vandermonde.nonsquare deg α) h,
+    ← subLeftFull_of_vandermonde_is_vandermonde h,
+    Matrices.full_rank_iff_det_ne_zero, Matrix.det_vandermonde_ne_zero_iff
+    ]
+  exact α.injective
+
+--- RMK: maybe unify the above 2 lemmas to establish that the rank of a `ι x deg` Vandermonde
+--- matrix is `min ι deg`?
 
 theorem eval_matrixOfPolynomials_eq_nsvandermonde_mul_matrixOfPolynomials
   {deg : ℕ} [CommRing F] {v : Fin ι ↪ F}
@@ -130,7 +168,7 @@ lemma exists_poly_of_coeffs [Semiring F] (deg : ℕ) [NeZero deg] (coeffs : Fin 
   · apply degree_lt; aesop
 
 /--
-The Vandermonde matrix is the generator matrix for an RS code of length `ι` and dimension `deg`.
+The generator matrix of a Reed-Solomon code is a Vandermonde matrix.
 -/
 lemma genMatIsVandermonde [Field F] {deg : ℕ} [inst : NeZero deg] (α : Fin ι ↪ F) :
   LinearCodes.genMat_mul (Vandermonde.nonsquare deg α) = ReedSolomon.code α deg := by
@@ -184,27 +222,35 @@ lemma genMatIsVandermonde [Field F] {deg : ℕ} [inst : NeZero deg] (α : Fin ι
         linarith
       · aesop
 
--- our lemma Vandermonde.nonsquareRank will finish the proof because we fall into the first case.
 -- for RS codes we know `deg ≤ ι ≤ |F|`.  `ι ≤ |F|` is clear from the embedding.
--- Check : is `deg ≤ ι` implemented in Quang's defn? Answer: not explicitly.
+-- Check : is `deg ≤ ι` implemented in Quang's defn? Answer: not explicitly. Worth mentioning??
 
+/--
+The dimension of a Reed-Solomon code is the maximal degree of the polynomials.
+-/
 lemma dim_eq_deg [Field F] {deg : ℕ} [NeZero deg] {α : Fin ι ↪ F} (h : deg ≤ ι) :
   LinearCodes.dim (ReedSolomon.code α deg) = deg := by
-  rw [← genMatIsVandermonde, ← LinearCodes.dimEqRankGenMat, Vandermonde.nonsquareRank]
+  rw [← genMatIsVandermonde, ← LinearCodes.dimEqRankGenMat, Vandermonde.nonsquare_rows_ge_cols_rank]
   simp [h]
 
+/--
+The length of a Reed-Solomon code is the domain size.
+-/
 lemma length_eq_domain_size [Field F] {deg : ℕ} {α : Fin ι ↪ F} :
   LinearCodes.length (ReedSolomon.code α deg) = ι := by
   rw[LinearCodes.length]
   simp
 
+/--
+The rate of a Reed-Solomon code.
+-/
 lemma rate [Field F] {deg : ℕ} [NeZero deg] {α : Fin ι ↪ F} (h : deg ≤ ι) :
   LinearCodes.rate (ReedSolomon.code α deg) = deg / ι := by
   rw[LinearCodes.rate, dim_eq_deg, length_eq_domain_size]
   exact h
 
 /--
-  The minimal code distance of an RS code of length `ι` and dimension `deg` is `ι - deg + 1`
+The minimal code distance of a Reed-Solomon given by the degree and domain size.
 -/
 lemma minDist [Field F] {deg : ℕ} {α : Fin ι ↪ F} :
   LinearCodes.minDist (ReedSolomon.code α deg) = ι - deg + 1 := by sorry
