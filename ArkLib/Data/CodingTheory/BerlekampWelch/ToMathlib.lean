@@ -11,4 +11,4 @@ theorem polynomial_sum_ext.{u, u_1}
   {p : Polynomial R} {f g : ℕ → R → S}  
   (h : ∀ i x, f i x = g i x)
   : p.sum f = p.sum g := by
-  aesop (add simp [Polynomial.sum])
+  aesop (add simp Polynomial.sum)

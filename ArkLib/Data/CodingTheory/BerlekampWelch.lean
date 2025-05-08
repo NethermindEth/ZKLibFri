@@ -200,37 +200,41 @@ protected lemma elocPolyF_eq_elocPoly :
   ElocPolyF (n := n) (liftF' ωs) (liftF' f) = ElocPoly n ωs f := 
   elocPoly_congr liftF_liftF'_of_lt liftF_liftF'_of_lt
 
-@[simp]
 protected lemma elocPolyF_eq_elocPoly' {ωs f : Fin n → F} :
   ElocPolyF ωs f p = ElocPoly n (liftF ωs) (liftF f) p := rfl
+
+open BerlekampWelch (elocPolyF_eq_elocPoly')
 
 protected lemma elocPoly_leftF_leftF_eq_contract {ωs f : Fin m → F} :
   ElocPoly n (liftF ωs) (liftF f) =
   ElocPoly n (contract n ωs) (contract n f) := by
   rw [elocPoly_congr contract_eq_liftF_of_lt contract_eq_liftF_of_lt]
 
+@[simp]
 protected lemma elocPolyF_ne_zero {ωs f : Fin m → F} :
   ElocPolyF ωs f p ≠ 0 := by
-  aesop (add simp [BerlekampWelch.elocPoly_ne_zero])
+  aesop (add simp [BerlekampWelch.elocPoly_ne_zero, ElocPolyF])
 
 protected lemma errors_are_roots_of_elocPolyF {i : Fin n} {ωs f : Fin n → F}
   (h : f i ≠ p.eval (ωs i)) : (ElocPolyF ωs f p).eval (ωs i) = 0 := by
   rw [←BerlekampWelch.liftF_eval (f := ωs)]
-  aesop (config := {warnOnNonterminal := false})
-  rw [BerlekampWelch.errors_are_roots_of_elocPoly 
-    (i.isLt) 
-    (by aesop (add simp [BerlekampWelch.liftF_eval]))]
+  aesop (config := {warnOnNonterminal := false}) (add simp elocPolyF_eq_elocPoly')
+  rw [
+    BerlekampWelch.errors_are_roots_of_elocPoly i.isLt
+    (by aesop (add simp [BerlekampWelch.errors_are_roots_of_elocPoly, BerlekampWelch.liftF_eval]))
+  ]
 
 @[simp]
 protected lemma elocPolyF_leading_coeff_one {ωs f : Fin n → F}
-  : (ElocPolyF ωs f p).leadingCoeff = 1 := by
-  aesop
-  
+  : (ElocPolyF ωs f p).leadingCoeff = 1 := by simp [ElocPolyF]
+
 end
 
 open BerlekampWelch
   (elocPolyF_eq_elocPoly' elocPoly_leftF_leftF_eq_contract
    elocPoly_zero elocPoly_succ liftF liftF_succ elocPolyF_leading_coeff_one)
+
+section
 
 @[simp]
 lemma elocPolyF_deg {ωs f : Fin n → F} : (ElocPolyF ωs f p).natDegree = Δ₀(f, p.eval ∘ ωs) := by
@@ -252,144 +256,89 @@ lemma elocPolyF_deg {ωs f : Fin n → F} : (ElocPolyF ωs f p).natDegree = Δ�
 
 noncomputable def E {n : ℕ} (ωs : Fin n → F) 
   (f : Fin n → F) (p : Polynomial F) (e : ℕ) : Polynomial F :=
-  X ^ (e - (Δ₀(f, p.eval ∘ ωs) : ℕ)) * ElocPolyF (ωs := ωs) f p
+  X ^ (e - (Δ₀(f, p.eval ∘ ωs) : ℕ)) * ElocPolyF ωs f p
 
-lemma E_natDegree 
+lemma natDegree_E_eq_of_lt
   {e : ℕ} 
   {ωs f : Fin n → F} 
-  (h : (Δ₀(f, p.eval ∘ ωs) : ℕ) < e) : 
-  (E (ωs := ωs) f p e).natDegree = e  
+  (h : (Δ₀(f, p.eval ∘ ωs) : ℕ) ≤ e) : 
+  (E ωs f p e).natDegree = e  
   := by
-  unfold E
-  rw [natDegree_mul (by aesop) (by aesop)]
-  simp only [natDegree_pow, natDegree_X, mul_one, elocPolyF_deg] 
-  rw [Nat.sub_add_cancel (by omega)]
+  aesop (add simp [E, natDegree_mul]) (add safe (by omega))
 
+@[simp]
 lemma E_ne_0 {e : ℕ} {ωs f : Fin n → F} : (E ωs f p e) ≠ 0 := by
-  unfold E
-  intro contr
-  rw [mul_eq_zero] at contr
-  rcases contr with contr | contr
-    <;> try simp at contr 
+  aesop (add simp E)
 
 lemma errors_are_roots_of_E {i : Fin n} {e} {ωs f : Fin n → F}
   (h : f i ≠ p.eval (ωs i)) : (E ωs f p e).eval (ωs i) = 0  := by
-  unfold E 
-  aesop 
-    (erase simp [BerlekampWelch.elocPolyF_eq_elocPoly']) 
-    (add simp [BerlekampWelch.errors_are_roots_of_elocPolyF])
+  aesop (add simp [E, BerlekampWelch.errors_are_roots_of_elocPolyF])
 
 @[simp]
-lemma E_leading_coeff {e} {ωs f : Fin n → F}
-  : (E ωs f p e).leadingCoeff = 1 := by
-  simp [E]
+lemma leadingCoeff_E_eq_1 {e} {ωs f : Fin n → F} : (E ωs f p e).leadingCoeff = 1 := by simp [E]
 
-lemma E_is_normalized {e} {ωs f : Fin n → F}
-  : normalize (E ωs f p e) = E ωs f p e := by
-    simp only [normalize_apply]
-    conv =>
-      lhs
-      congr
-      rfl
-      simp only [E]
-      rw [normUnit_mul (by 
-        by_cases hz : (e - Δ₀(f, (fun a ↦ eval a p) ∘ ωs)) = 0 
-          <;> try simp [hz]
-      ) BerlekampWelch.elocPolyF_ne_zero]
-      simp
-      rfl
-    simp    
+@[simp]
+lemma normUnit_E_eq_1 {e} {ωs f : Fin n → F} : normUnit (E ωs f p e) = 1 := by
+  simp [E, normUnit_mul, normUnit, mul_eq_one_iff_eq_inv]
+  rfl
 
-noncomputable def Q {n : ℕ} (ωs : Fin n → F) 
-  (f : Fin n → F) (p : Polynomial F) (e : ℕ) : Polynomial F :=
+lemma normalize_E_eq_E {e} {ωs f : Fin n → F} : normalize (E ωs f p e) = E ωs f p e := by
+  simp [normalize_apply]
+
+noncomputable def Q {n : ℕ} (ωs f : Fin n → F) (p : Polynomial F) (e : ℕ) : Polynomial F :=
   p * (E ωs f p e)
 
-lemma Q_natDegree 
+lemma natDegree_Q_le_of_lt
   {e : ℕ} {ωs f : Fin n → F}
-  (h : (Δ₀(f, p.eval ∘ ωs) : ℕ) < e) : 
+  (h : (Δ₀(f, p.eval ∘ ωs) : ℕ) ≤ e) : 
   (Q ωs f p e).natDegree ≤ e + p.natDegree := by
-  unfold Q
-  by_cases h0 : p = 0   
-  · aesop
-  · aesop 
-      (add simp [ natDegree_mul, E_ne_0, E_natDegree]) 
-      (add safe (by omega))
+  by_cases p = 0 <;>
+  aesop (add simp [Q, natDegree_mul, natDegree_E_eq_of_lt]) (add safe (by omega))
 
-lemma Q_ne_0 
-  {e : ℕ} {ωs f : Fin n → F}
-  (hne : p ≠ 0)
-  : Q ωs f p e ≠ 0 := by
-  unfold Q 
-  aesop 
-    (add simp [E_ne_0])
+lemma Q_ne_zero_of_ne {e : ℕ} {ωs f : Fin n → F} (hne : p ≠ 0) : Q ωs f p e ≠ 0 := by
+  aesop (add simp [Q])
 
-lemma y_i_E_omega_i_eq_Q_omega_i {e : ℕ} {i : Fin n} {ωs f : Fin n → F}:
-  (Q ωs f p e).eval (ωs i) = (f i) * (E ωs f p e).eval (ωs i) := by
-  unfold Q E
-  by_cases hi : f i = p.eval (ωs i)
-  · aesop 
-  · aesop 
-      (erase simp BerlekampWelch.elocPolyF_eq_elocPoly')
-      (add simp [BerlekampWelch.errors_are_roots_of_elocPolyF])
+lemma eval_Q_eq_mul_eval_E {e : ℕ} {i : Fin n} {ωs f : Fin n → F}:
+  (Q ωs f p e).eval (ωs i) = f i * (E ωs f p e).eval (ωs i) := by
+  by_cases f i = p.eval (ωs i) <;> 
+  aesop (add simp [Q, E, BerlekampWelch.errors_are_roots_of_elocPolyF])
 
-lemma E_and_Q_unique {e k : ℕ} 
+lemma E_and_Q_unique {e k : ℕ}
   {E' Q' : Polynomial F} 
   {ωs f : Fin n → F}
   (hk : 1 ≤ k)
   (hp_deg: p.natDegree ≤ k - 1)
   (hnz_e : E' ≠ 0) (hnz_q : Q' ≠ 0)
   (hdeg_e : E'.natDegree = e) (hdeg_q : Q'.natDegree ≤ e + k - 1)
-  (h : ∀ i : Fin n, 
-    (f i) * E'.eval (ωs i) = Q'.eval (ωs i))
+  (h : ∀ i : Fin n, (f i) * E'.eval (ωs i) = Q'.eval (ωs i))
   (he : 2 * e < n - k + 1)
-  (h_ham : (Δ₀(f, p.eval ∘ ωs) : ℕ) < e)
+  (hk_n : k ≤ n)
+  (h_ham : (Δ₀(f, p.eval ∘ ωs) : ℕ) ≤ e)
   (h_diff : Function.Injective ωs)
   (hp : p ≠ 0)
-  : (E ωs f p e) * Q' = E' * (Q ωs f p e) := by
-  let R := E ωs f p e * Q' - E' * Q ωs f p e 
-  have hr_deg : R.natDegree ≤ 2 * e + k - 1 := by
-    simp [R]
+  : E ωs f p e * Q' = E' * Q ωs f p e := by
+  set p₁ := E ωs f p e * Q' with eqp₁
+  set p₂ := E' * Q ωs f p e with eqp₂
+  let range := Finset.image ωs Finset.univ
+  by_contra! contra
+  have : range.card = n := by
+    simp [range, Finset.card_image_iff.2 (Set.injOn_of_injective h_diff)]
+  have : range.card ≤ (p₁ - p₂).natDegree :=
+    card_le_degree_of_subset_roots fun x hx ↦ by
+      obtain ⟨x', rfl⟩ := show ∃ i, ωs i = x by aesop
+      simp [sub_ne_zero.2 contra, p₁, p₂, eval_Q_eq_mul_eval_E, ←h x']
+      ring
+  have hr_deg : (p₁ - p₂).natDegree ≤ 2 * e + k - 1 := by
+    have := natDegree_Q_le_of_lt h_ham
     apply Nat.le_trans (natDegree_add_le _ _)
-    simp only [
-      natDegree_mul E_ne_0 hnz_q,
-      natDegree_neg,
-      natDegree_mul hnz_e (Q_ne_0 hp)
-      ]
-    aesop (config := {warnOnNonterminal := false})
-      (add simp [Nat.max_le, E_natDegree])
-      (add safe forward (Q_natDegree h_ham))
-      (add safe (by omega))
-  by_cases hr : R = 0 
-  · rw [←add_zero (E' * (Q _ _ _ _))
-       , ←hr]
-    ring
-  · let roots := Multiset.ofList <| List.map ωs  
-        (List.finRange n)
-    have hsub : (⟨roots, by 
-        rw [Multiset.coe_nodup, List.nodup_map_iff h_diff]        
-         ;
-        aesop 
-          (add simp [Multiset.coe_nodup])
-          (add simp [List.Nodup, List.pairwise_iff_get])
-      ⟩ : Finset F).val ⊆ R.roots := by
-      {
-        intro x hx
-        aesop (config := {warnOnNonterminal := false})
-          (add simp [mem_roots, roots, R])
-          (add simp [errors_are_roots_of_E])
-          (add simp [y_i_E_omega_i_eq_Q_omega_i]) 
-        rw [←h]
-        ring
-      }
-    have hcard := card_le_degree_of_subset_roots hsub 
-    aesop (add safe (by omega))
+    aesop (add simp [natDegree_mul, Q_ne_zero_of_ne, natDegree_E_eq_of_lt]) (add safe (by omega))
+  aesop (add safe (by omega))
 
-def BerlekampWelchMatrix [NeZero n] 
-  (e k : ℕ) 
-  (ωs f : Fin n → F) : Matrix (Fin n) (Fin (2 * e + k)) F := 
-  Matrix.of (fun i j => 
+def BerlekampWelchMatrix [NeZero n]
+  (e k : ℕ) (ωs f : Fin n → F) : Matrix (Fin n) (Fin (2 * e + k)) F := 
+  Matrix.of fun i j => 
     let αᵢ := ωs i
-    if ↑j < e then (f i * αᵢ^(↑j : ℕ)) else -αᵢ^(↑j - e))
+    if ↑j < e then f i * αᵢ^(↑j : ℕ) else -αᵢ^(↑j - e)
 
 def Rhs [NeZero n] (e : ℕ) (ωs f : Fin n → F) (i : Fin n) : F := 
   let αᵢ := ωs i
@@ -400,40 +349,36 @@ def IsBerlekampWelchSolution [NeZero n]
   (ωs f : Fin n → F)
   (v : Fin (2 * e + k) → F)
   : Prop 
-  := Matrix.mulVec (BerlekampWelchMatrix e k ωs f) v = (Rhs e ωs f)
+  := Matrix.mulVec (BerlekampWelchMatrix e k ωs f) v = Rhs e ωs f
 
+omit [DecidableEq F] in
 lemma is_berlekamp_welch_solution_ext [NeZero n]
   {e k : ℕ} 
   {ωs f : Fin n → F}
   {v : Fin (2 * e + k) → F}
-  (h : ∀ i, (Matrix.mulVec (BerlekampWelchMatrix e k ωs f) v) i 
-    = (-(f i) * (ωs i)^e) )
+  (h : ∀ i, (Matrix.mulVec (BerlekampWelchMatrix e k ωs f) v) i  = -(f i) * (ωs i)^e)
   : IsBerlekampWelchSolution e k ωs f v := by
   aesop (add simp [IsBerlekampWelchSolution, Rhs])
 
 noncomputable def E_and_Q_to_a_solution (e : ℕ) (E Q : Polynomial F) (i : Fin n) : F :=
-  match (E, Q) with
-  | (⟨⟨_, f, _⟩⟩, ⟨⟨_, g, _⟩⟩) => if i < e then f i else g (i - e)
+  if i < e then E.toFinsupp i else Q.toFinsupp (i - e)
 
+omit [DecidableEq F] in
 @[simp]
 lemma E_and_Q_to_a_solution_coeff 
   {e : ℕ} 
   {E Q : Polynomial F} 
   {i : Fin n}
-  : (E_and_Q_to_a_solution e E Q) i = if i < e then E.coeff i else Q.coeff (i - e) := by
-  rcases E with ⟨⟨_, f, _⟩⟩
-  rcases Q with ⟨⟨_, g, _⟩⟩
-  simp [E_and_Q_to_a_solution]
+  : E_and_Q_to_a_solution e E Q i = if i < e then E.coeff i else Q.coeff (i - e) := rfl
 
 lemma E_and_Q_are_a_solution {e k : ℕ} [NeZero n]
   {ωs f : Fin n → F} {p : Polynomial F}
-  (h_ham : (Δ₀(f, p.eval ∘ ωs) : ℕ) < e)
+  (h_ham : (Δ₀(f, p.eval ∘ ωs) : ℕ) ≤ e)
   (hk : 1 ≤ k)
   (hp_deg : p.natDegree ≤ k - 1) 
   (he : 2 * e < n - k + 1)
   : IsBerlekampWelchSolution e k ωs f (E_and_Q_to_a_solution e (E ωs f p e) (Q ωs f p e)) := by
-  apply is_berlekamp_welch_solution_ext
-  intro i
+  refine is_berlekamp_welch_solution_ext (fun i ↦ ?p)
   rw [←Matrix.mulVecᵣ_eq]
   simp [Matrix.mulVecᵣ, dotProduct]
   rw [Finset.sum_ite]
@@ -494,7 +439,7 @@ lemma E_and_Q_are_a_solution {e k : ℕ} [NeZero n]
                simp at hx 
                rw [←Polynomial.ite_le_natDegree_coeff _ _ inferInstance] at hx 
                split_ifs at hx with hif 
-               rw [E_natDegree h_ham] at hif 
+               rw [natDegree_E_eq_of_lt h_ham] at hif 
                omega 
                tauto 
             }),
@@ -533,11 +478,11 @@ lemma E_and_Q_are_a_solution {e k : ℕ} [NeZero n]
           intro x hx 
           simp 
           simp at hx 
-          rw [←Polynomial.ite_le_natDegree_coeff _ _ inferInstance ] at hx 
+          rw [←Polynomial.ite_le_natDegree_coeff _ _ inferInstance] at hx 
           split_ifs at hx with hif
           apply Nat.lt_of_lt_of_le hif
           trans 
-          apply Nat.add_le_add_left (Q_natDegree h_ham)
+          apply Nat.add_le_add_left (natDegree_Q_le_of_lt h_ham)
           omega
           aesop 
        })]
@@ -552,11 +497,11 @@ lemma E_and_Q_are_a_solution {e k : ℕ} [NeZero n]
       rfl
     }
   rw [mul_sub_left_distrib]
-  rw [←y_i_E_omega_i_eq_Q_omega_i]
+  rw [←eval_Q_eq_mul_eval_E]
   ring_nf
   have h_lead :(E ωs f p e).coeff e = (E ωs f p e).leadingCoeff := by
     simp only [Polynomial.leadingCoeff]
-    rw [E_natDegree h_ham]
+    rw [natDegree_E_eq_of_lt h_ham]
   rw [h_lead]
   simp 
 
@@ -571,7 +516,7 @@ lemma solution_to_E_coeff {e k : ℕ} {v : Fin (2 * e + k) → F} {i : ℕ}:
   (solution_to_E e k v).coeff i = if i = e then 1 else if i < e then liftF v i else 0 := rfl
 
 @[simp]
-lemma solution_to_E_natDegree {e k : ℕ} {v : Fin (2 * e + k) → F} :
+lemma solution_to_natDegree_E {e k : ℕ} {v : Fin (2 * e + k) → F} :
   (solution_to_E e k v).natDegree = e := by
   simp [solution_to_E, Polynomial.natDegree, Polynomial.degree]
   rw [sup_eq_left.2 ] <;> try simp
@@ -584,12 +529,14 @@ def solution_to_Q (e k : ℕ) (v : Fin (2 * e + k) → F) : Polynomial F :=
     }⟩⟩
 
 @[simp]
-lemma solution_to_Q_natDegree {e k : ℕ} {v : Fin (2 * e + k) → F} :
+lemma solution_to_natDegree_Q_le {e k : ℕ} {v : Fin (2 * e + k) → F} :
   (solution_to_Q e k v).natDegree ≤ e + k - 1 := by
   simp [solution_to_Q, Polynomial.natDegree, Polynomial.degree]
   rw [WithBot.unbotD_le_iff] <;>
-  aesop (add safe [(by specialize this b hb), (by omega)])
-  
+  aesop (add safe [(by omega)])
+
+end
+
 end
 
 end BW
