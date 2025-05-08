@@ -332,20 +332,22 @@ lemma y_i_E_omega_i_eq_Q_omega_i {e : ℕ} {i : Fin n} {ωs f : Fin n → F}:
       (erase simp BerlekampWelch.elocPolyF_eq_elocPoly')
       (add simp [BerlekampWelch.errors_are_roots_of_elocPolyF])
 
-lemma E_and_Q_unique {e : ℕ} 
+lemma E_and_Q_unique {e k : ℕ} 
   {E' Q' : Polynomial F} 
   {ωs f : Fin n → F}
+  (hk : 1 ≤ k)
+  (hp_deg: p.natDegree ≤ k - 1)
   (hnz_e : E' ≠ 0) (hnz_q : Q' ≠ 0)
-  (hdeg_e : E'.natDegree = e) (hdeg_q : Q'.natDegree ≤ e + p.natDegree)
+  (hdeg_e : E'.natDegree = e) (hdeg_q : Q'.natDegree ≤ e + k - 1)
   (h : ∀ i : Fin n, 
     (f i) * E'.eval (ωs i) = Q'.eval (ωs i))
-  (he : 2 * e < n - p.natDegree)
+  (he : 2 * e < n - k + 1)
   (h_ham : (Δ₀(f, p.eval ∘ ωs) : ℕ) < e)
   (h_diff : Function.Injective ωs)
   (hp : p ≠ 0)
   : (E ωs f p e) * Q' = E' * (Q ωs f p e) := by
   let R := E ωs f p e * Q' - E' * Q ωs f p e 
-  have hr_deg : R.natDegree ≤ 2 * e + p.natDegree := by
+  have hr_deg : R.natDegree ≤ 2 * e + k - 1 := by
     simp [R]
     apply Nat.le_trans (natDegree_add_le _ _)
     simp only [
@@ -591,7 +593,6 @@ lemma solution_to_Q_natDegree {e k : ℕ} {v : Fin (2 * e + k) → F} :
   · simp [h, WithBot.unbotD, WithBot.recBotCoe]
     have hle : (some m ≤ (↑(e + k - 1) : WithBot ℕ)) := by 
       rw [←h]
-      apply Finset.max_le
       sorry 
     aesop 
 end
