@@ -587,14 +587,9 @@ def solution_to_Q (e k : ℕ) (v : Fin (2 * e + k) → F) : Polynomial F :=
 lemma solution_to_Q_natDegree {e k : ℕ} {v : Fin (2 * e + k) → F} :
   (solution_to_Q e k v).natDegree ≤ e + k - 1 := by
   simp [solution_to_Q, Polynomial.natDegree, Polynomial.degree]
-  generalize h : {x ∈ Finset.range (e + k) | ¬liftF v (e + x) = 0}.max = m 
-  rcases m with _ | m
-  · simp [h, WithBot.unbotD, WithBot.recBotCoe]
-  · simp [h, WithBot.unbotD, WithBot.recBotCoe]
-    have hle : (some m ≤ (↑(e + k - 1) : WithBot ℕ)) := by 
-      rw [←h]
-      sorry 
-    aesop 
+  rw [WithBot.unbotD_le_iff] <;>
+  aesop (add safe [(by specialize this b hb), (by omega)])
+  
 end
 
 end BW
