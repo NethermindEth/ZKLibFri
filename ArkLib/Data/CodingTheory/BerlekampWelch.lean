@@ -485,9 +485,7 @@ lemma E_and_Q_are_a_solution {e k : ℕ} [NeZero n]
                intro x hx
                simp 
                simp at hx 
-               rw [←Polynomial.ite_le_natDegree_coeff _ _ (by {
-                sorry
-               }) ] at hx 
+               rw [←Polynomial.ite_le_natDegree_coeff _ _ inferInstance] at hx 
                split_ifs at hx with hif 
                rw [E_natDegree h_ham] at hif 
                omega 
@@ -528,9 +526,7 @@ lemma E_and_Q_are_a_solution {e k : ℕ} [NeZero n]
           intro x hx 
           simp 
           simp at hx 
-          rw [←Polynomial.ite_le_natDegree_coeff _ _ (by {
-            sorry
-          }) ] at hx 
+          rw [←Polynomial.ite_le_natDegree_coeff _ _ inferInstance ] at hx 
           split_ifs at hx with hif
           apply Nat.lt_of_lt_of_le hif
           trans 
