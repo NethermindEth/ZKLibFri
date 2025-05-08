@@ -7,6 +7,7 @@ import Mathlib.Data.Matrix.Mul
 import Mathlib.Data.Matrix.Reflection
 
 import ArkLib.Data.CodingTheory.Basic
+import ArkLib.Data.CodingTheory.BerlekampWelch.ToMathlib
 
 namespace BerlekampWelch
 
@@ -481,7 +482,14 @@ lemma E_and_Q_are_a_solution {e k : ℕ} [NeZero n]
      omega 
      tauto 
     })]
+    rw [polynomial_sum_ext 
+      (g := fun x a => a * ωs i ^ x) 
+      (by aesop 
+        (add safe 
+          (by ring_nf)))]
     rw [←Polynomial.eval_eq_sum] 
+    rfl
+
     
  
 
