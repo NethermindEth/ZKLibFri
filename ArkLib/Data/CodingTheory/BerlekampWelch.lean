@@ -74,6 +74,12 @@ protected lemma liftF_eval {f : Fin n → α} {i : Fin n} :
   liftF f i.val = f i := by
   aesop (add simp liftF)
 
+protected lemma liftF_ne_0 {f : Fin n → α} {i : ℕ}
+  (h : liftF f i ≠ 0)
+  : i < n := by
+  aesop (add simp liftF)
+
+
 protected abbrev contract (m : ℕ) (f : Fin n → α) := liftF (liftF' (n := m) (liftF f))
 
 open BerlekampWelch (contract)
@@ -420,7 +426,6 @@ lemma E_and_Q_to_a_solution_coeff
 lemma E_and_Q_are_a_solution {e k : ℕ} [NeZero n]
   {ωs f : Fin n → F} {p : Polynomial F}
   (h_ham : (Δ₀(f, p.eval ∘ ωs) : ℕ) < e)
-  (hp : p ≠ 0)
   (hk : 1 ≤ k)
   (hp_deg : p.natDegree ≤ k - 1) 
   (he : 2 * e < n - k + 1)
@@ -553,6 +558,42 @@ lemma E_and_Q_are_a_solution {e k : ℕ} [NeZero n]
   rw [h_lead]
   simp 
 
+def solution_to_E (e k : ℕ) (v : Fin (2 * e + k) → F) : Polynomial F :=
+  ⟨⟨insert e ((Finset.range e).filter (fun x => liftF v x ≠ 0)), 
+    fun i => if i = e then 1 else if i < e then liftF v i else 0, by 
+      aesop (add safe forward BerlekampWelch.liftF_ne_0)
+    ⟩⟩
+
+@[simp]
+lemma solution_to_E_coeff {e k : ℕ} {v : Fin (2 * e + k) → F} {i : ℕ}:
+  (solution_to_E e k v).coeff i = if i = e then 1 else if i < e then liftF v i else 0 := rfl
+
+@[simp]
+lemma solution_to_E_natDegree {e k : ℕ} {v : Fin (2 * e + k) → F} :
+  (solution_to_E e k v).natDegree = e := by
+  simp [solution_to_E, Polynomial.natDegree, Polynomial.degree]
+  rw [sup_eq_left.2 ] <;> try simp
+  omega
+
+def solution_to_Q (e k : ℕ) (v : Fin (2 * e + k) → F) : Polynomial F :=
+  ⟨⟨(Finset.range (e + k)).filter (fun x => liftF v (e + x) ≠ 0), 
+    fun i => if i < e + k then liftF v (e + i) else 0, by {
+      aesop (add safe (by omega))
+    }⟩⟩
+
+@[simp]
+lemma solution_to_Q_natDegree {e k : ℕ} {v : Fin (2 * e + k) → F} :
+  (solution_to_Q e k v).natDegree ≤ e + k - 1 := by
+  simp [solution_to_Q, Polynomial.natDegree, Polynomial.degree]
+  generalize h : {x ∈ Finset.range (e + k) | ¬liftF v (e + x) = 0}.max = m 
+  rcases m with _ | m
+  · simp [h, WithBot.unbotD, WithBot.recBotCoe]
+  · simp [h, WithBot.unbotD, WithBot.recBotCoe]
+    have hle : (some m ≤ (↑(e + k - 1) : WithBot ℕ)) := by 
+      rw [←h]
+      apply Finset.max_le
+      sorry 
+    aesop 
 end
 
 end BW
