@@ -183,7 +183,7 @@ lemma genMatIsVandermonde [NeZero deg] :
 lemma dim_eq_deg [NeZero deg] (h : deg ≤ ι) :
   LinearCodes.dim (ReedSolomon.code α deg) = deg := by
   rw [←genMatIsVandermonde, ←LinearCodes.dimEqRankGenMat]
-  aesop
+  simpa
 
 @[simp]
 lemma length_eq_domain_size :
