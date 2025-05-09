@@ -32,49 +32,52 @@ The maximal upper square submatrix of a Vandermonde matrix is a Vandermonde matr
 lemma subUpFull_of_vandermonde_is_vandermonde [CommRing F] {deg : ℕ} {α : Fin ι ↪ F} (h : deg ≤ ι)
   :
   Matrix.vandermonde (Embedding.restrictionToFun deg α h) =
-  Matrices.subUpFull (nonsquare deg α) h := by
-  unfold Matrices.subUpFull nonsquare Matrix.vandermonde
+  Matrix.subUpFull (nonsquare deg α) h := by
+  unfold Matrix.subUpFull nonsquare Matrix.vandermonde
   aesop
 
 /--
 The maximal left square submatrix of a Vandermonde matrix is a Vandermonde matrix.
 -/
 lemma subLeftFull_of_vandermonde_is_vandermonde [CommRing F] {deg : ℕ} {α : Fin ι ↪ F} (h : ι ≤ deg)
-  : Matrix.vandermonde α = Matrices.subLeftFull (nonsquare deg α) h := by
-  unfold Matrices.subLeftFull nonsquare Matrix.vandermonde
+  : Matrix.vandermonde α = Matrix.subLeftFull (nonsquare deg α) h := by
+  unfold Matrix.subLeftFull nonsquare Matrix.vandermonde
   aesop
 
 /--
 The rank of a non-square Vandermonde matrix with more rows than columns is the number of columns.
 -/
-lemma nonsquare_rows_ge_cols_rank [CommRing F] [IsDomain F] {deg : ℕ} {α : Fin ι ↪ F}
+lemma rank_nonsquare_eq_deg_of_deg_le [CommRing F] [IsDomain F] {deg : ℕ} {α : Fin ι ↪ F}
   (h : deg ≤ ι) :
   (Vandermonde.nonsquare deg α).rank = deg := by
-   rw
-    [
-    Matrices.full_col_rank_via_rank_subUpFull (Vandermonde.nonsquare deg α) h,
-    ← subUpFull_of_vandermonde_is_vandermonde h,
-    Matrices.full_rank_iff_det_ne_zero deg (Matrix.vandermonde (Embedding.restrictionToFun deg α h))
-    , Matrix.det_vandermonde_ne_zero_iff
+    rw [
+      Matrix.full_col_rank_via_rank_subUpFull (h_col := h),
+      ← subUpFull_of_vandermonde_is_vandermonde,
+      Matrix.full_rank_iff_det_ne_zero,
+      Matrix.det_vandermonde_ne_zero_iff
     ]
-   exact Embedding.restrictionToFun_injective deg α h
+    apply Embedding.restrictionToFun_injective
 
 /--
 The rank of a non-square Vandermonde matrix with more columns than rows is the number of rows.
 -/
-lemma nonsquare_rows_le_cols_rank [CommRing F] [IsDomain F] {deg : ℕ} {α : Fin ι ↪ F}
+lemma rank_nonsquare_eq_deg_of_ι_le [CommRing F] [IsDomain F] {deg : ℕ} {α : Fin ι ↪ F}
   (h : ι ≤ deg) :
   (Vandermonde.nonsquare deg α).rank = ι := by
-  rw
-    [
-    Matrices.full_row_rank_via_rank_subLeftFull (Vandermonde.nonsquare deg α) h,
-    ← subLeftFull_of_vandermonde_is_vandermonde h,
-    Matrices.full_rank_iff_det_ne_zero, Matrix.det_vandermonde_ne_zero_iff
-    ]
+  rw [
+    Matrix.full_row_rank_via_rank_subLeftFull (h_row := h),
+    ← subLeftFull_of_vandermonde_is_vandermonde,
+    Matrix.full_rank_iff_det_ne_zero,
+    Matrix.det_vandermonde_ne_zero_iff
+  ]
   exact α.injective
 
---- RMK: maybe unify the above 2 lemmas to establish that the rank of a `ι x deg` Vandermonde
---- matrix is `min ι deg`?
+@[simp]
+lemma rank_nonsquare_rows_eq_min [CommRing F] [IsDomain F] {deg : ℕ} {α : Fin ι ↪ F} :
+  (Vandermonde.nonsquare deg α).rank = min ι deg := by
+  by_cases h : ι ≤ deg <;>
+  aesop (add simp [rank_nonsquare_eq_deg_of_ι_le, rank_nonsquare_eq_deg_of_deg_le])
+        (add safe forward le_of_lt)  
 
 theorem eval_matrixOfPolynomials_eq_nsvandermonde_mul_matrixOfPolynomials
   {deg : ℕ} [CommRing F] {v : Fin ι ↪ F}
@@ -230,8 +233,8 @@ The dimension of a Reed-Solomon code is the maximal degree of the polynomials.
 -/
 lemma dim_eq_deg [Field F] {deg : ℕ} [NeZero deg] {α : Fin ι ↪ F} (h : deg ≤ ι) :
   LinearCodes.dim (ReedSolomon.code α deg) = deg := by
-  rw [← genMatIsVandermonde, ← LinearCodes.dimEqRankGenMat, Vandermonde.nonsquare_rows_ge_cols_rank]
-  simp [h]
+  rw [←genMatIsVandermonde, ←LinearCodes.dimEqRankGenMat]
+  aesop
 
 /--
 The length of a Reed-Solomon code is the domain size.

@@ -13,7 +13,7 @@ noncomputable section
 variable {F : Type*} [Semiring F]
 variable {m n : ℕ}
 
-namespace Matrices
+namespace Matrix
 
 def neqCols [DecidableEq F] (U V : Matrix (Fin m) (Fin n) F) : Finset (Fin n) :=
   {j | ∃ i : (Fin m), V i j ≠ U i j}
@@ -30,28 +30,29 @@ def colSpan (U : Matrix (Fin m) (Fin n) F) : Submodule F (Fin m → F) :=
 def colRank (U : Matrix (Fin m) (Fin n) F) : ℕ :=
   Module.finrank F (colSpan U)
 
-lemma rank_eq_min_row_col_rank [CommRing F] (U : Matrix (Fin m) (Fin n) F) :
+lemma rank_eq_min_row_col_rank [CommRing F] {U : Matrix (Fin m) (Fin n) F} :
   U.rank = min (rowRank U) (colRank U) := by sorry
 
 -- this really should be in mathlib?!
-lemma full_rank_iff_det_ne_zero [CommRing F] (n : ℕ) (U : Matrix (Fin n) (Fin n) F) :
+lemma full_rank_iff_det_ne_zero [CommRing F] {n : ℕ} {U : Matrix (Fin n) (Fin n) F} :
   U.rank = n ↔ Matrix.det U ≠ 0 := by sorry
 
-abbrev subUpFull (U : Matrix (Fin m) (Fin n) F) (h_col : n ≤ m) :
-Matrix (Fin n) (Fin n) F := Matrix.submatrix U (Fin.castLE h_col) id
+def subUpFull (U : Matrix (Fin m) (Fin n) F) (h_col : n ≤ m) :
+  Matrix (Fin n) (Fin n) F := Matrix.submatrix U (Fin.castLE h_col) id
 
-lemma full_col_rank_via_rank_subUpFull [CommRing F] (U : Matrix (Fin m) (Fin n) F)
+lemma full_col_rank_via_rank_subUpFull [CommRing F] {U : Matrix (Fin m) (Fin n) F}
   (h_col : n ≤ m) :
   U.rank = n ↔ (subUpFull U h_col).rank = n := by sorry
 
-abbrev subLeftFull (U : Matrix (Fin m) (Fin n) F) (h_row : m ≤ n) :
-Matrix (Fin m) (Fin m) F := Matrix.submatrix U id (Fin.castLE h_row)
+def subLeftFull (U : Matrix (Fin m) (Fin n) F) (h_row : m ≤ n) :
+  Matrix (Fin m) (Fin m) F := Matrix.submatrix U id (Fin.castLE h_row)
 
-lemma full_row_rank_via_rank_subLeftFull [CommRing F] (U : Matrix (Fin m) (Fin n) F)
+lemma full_row_rank_via_rank_subLeftFull [CommRing F] {U : Matrix (Fin m) (Fin n) F}
   (h_row : m ≤ n) :
   U.rank = m ↔ (subLeftFull U h_row).rank = m := by sorry
 
-end Matrices
+end Matrix
+
 end
 
 section
@@ -66,7 +67,8 @@ def restrictionToFun (deg : ℕ) (α : Fin ι ↪ F) (h : deg ≤ ι) : Fin deg 
 /--
 The composition of an embedding and the canonical embedding is injective.
 -/
-lemma restrictionToFun_injective (deg : ℕ) (α : Fin ι ↪ F) (h : deg ≤ ι) :
+lemma restrictionToFun_injective {deg : ℕ} {α : Fin ι ↪ F}
+  (h : deg ≤ ι) :
   Function.Injective (Embedding.restrictionToFun deg α h) := by
   unfold restrictionToFun
   simp only [Function.Embedding.toFun_eq_coe, EmbeddingLike.comp_injective]

@@ -23,7 +23,7 @@ import ArkLib.ProofSystem.Sumcheck.Basic
   Note that all dimensions are required to be powers of two.
 
   It is used to prove the correctness of R1CS relations: `(A *ᵥ 𝕫) * (B *ᵥ 𝕫) = (C *ᵥ 𝕫)`, where:
-  - `A, B, C : Matrix (Fin m) (Fin n) R` are the R1CS constraint matrices.
+  - `A, B, C : Matrix (Fin m) (Fin n) R` are the R1CS constraint Matrix.
   - `𝕩 : Fin (n - k) → R` is the public input.
   - `𝕨 : Fin k → R` is the private witness.
   - `𝕫 = 𝕩 ‖ 𝕨` is the concatenation of the public input `𝕩` and the private witness `𝕨`.
