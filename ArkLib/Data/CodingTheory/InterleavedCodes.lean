@@ -51,7 +51,7 @@ def lawfulInterleavedCodeOfLinearCode (κ : ℕ) (LC : LinearCode ι F) : Lawful
   ⟨codeOfLinearCode κ LC, isInterleaved_codeOfLinearCode⟩
 
 def distCodewords (U V : Matrix (Fin κ) (Fin ι) F) : ℕ :=
-  (Matrices.neqCols U V).card
+  (Matrix.neqCols U V).card
 
 /--
 `Δ(U,V)` is the distance codewords `U` and `V` of a `κ`-interleaved code `IC`.
@@ -97,7 +97,7 @@ lemma distInterleavedCodeToCodeLB
   {IC : LawfulInterleavedCode κ ι F} {U : Matrix (Fin κ) (Fin ι) F} {e : ℕ}
   (hF: Fintype.card F ≥ e)
   (he : (e : ℚ) ≤ (codeDist (IC.1.LC : Set (Fin ι → F)) / 3)) (hU : e < Δ(U,IC.1.MF)) :
-  ∃ v ∈ Matrices.rowSpan U , e < distFromCode v IC.1.LC := sorry
+  ∃ v ∈ Matrix.rowSpan U , e < distFromCode v IC.1.LC := sorry
 
 namespace ProximityToRS
 
@@ -131,7 +131,7 @@ Lemma 4.5 Ligero
 lemma probOfBadPts {deg : ℕ} {α : Fin ι ↪ F} {e : ℕ} {U : Matrix (Fin κ) (Fin ι) F}
   (he : (e : ℚ) < (ι - deg + 1 / 3))
   (hU : e < Δ(U, matrixSubmoduleOfLinearCode κ (ReedSolomon.code α deg))) :
-  (PMF.uniformOfFintype (Matrices.rowSpan U)).toOuterMeasure
+  (PMF.uniformOfFintype (Matrix.rowSpan U)).toOuterMeasure
     { w | distFromCode (n := Fin ι) (R := F) w (ReedSolomon.code α deg) ≤ e }
   ≤ (ι - deg + 1)/(Fintype.card F) := by
   sorry
