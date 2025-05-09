@@ -584,11 +584,104 @@ def solution_to_Q (e k : ℕ) (v : Fin (2 * e + k) → F) : Polynomial F :=
     }⟩⟩
 
 @[simp]
+lemma solution_to_Q_coeff {e k : ℕ} {v : Fin (2 * e + k) → F} {i : ℕ}:
+  (solution_to_Q e k v).coeff i = if i < e + k then liftF v (e + i) else 0 := rfl
+
+@[simp]
 lemma solution_to_Q_natDegree {e k : ℕ} {v : Fin (2 * e + k) → F} :
   (solution_to_Q e k v).natDegree ≤ e + k - 1 := by
   simp [solution_to_Q, Polynomial.natDegree, Polynomial.degree]
   rw [WithBot.unbotD_le_iff] <;>
   aesop (add safe [(by omega)])
+
+lemma solution_E_and_Q_satisfy_the_condition {e k : ℕ} 
+  [NeZero n] 
+  {ωs f : Fin n → F}
+  {v : Fin (2 * e + k) → F}
+  (hk : 1 ≤ k)
+  (h_sol : IsBerlekampWelchSolution e k ωs f v)
+  {i : Fin n}
+  : (f i) * (solution_to_E e k v).eval (ωs i) 
+    = (solution_to_Q e k v).eval (ωs i) := by
+  conv =>
+    lhs
+    rw [Polynomial.eval_eq_sum_range]
+    rfl
+  rw [Finset.range_succ]
+  rw [Finset.sum_insert (by aesop)]
+  simp 
+  rw [Finset.sum_ite_of_false (by aesop)]
+  rw [Finset.sum_ite_of_true (by aesop)]
+  rw [Polynomial.eval_eq_sum_range' (n := e + k) 
+        (Nat.lt_of_le_of_lt solution_to_Q_natDegree (by omega))]
+  simp 
+  rw [Finset.sum_ite_of_true (by aesop)]
+  simp [IsBerlekampWelchSolution] at h_sol 
+  have h_sol : (BerlekampWelchMatrix e k ωs f).mulVec v i = Rhs e ωs f i := by
+    rw [h_sol]
+  simp [BerlekampWelchMatrix, Rhs, Matrix.mulVec, dotProduct] at h_sol 
+  have h_aux {a b : F} : a = -b → -a = b := by aesop
+  have h_sol := h_aux h_sol 
+  rw [mul_add, ←h_sol]
+  rw [Finset.sum_ite]
+  conv =>
+    congr 
+    congr 
+    congr 
+    congr
+    rw [Finset.sum_bij
+      (t := Finset.range e)
+      (g := fun a => f i * (liftF v a * ωs i ^ a))
+      (by {
+        rintro ⟨a, hfin⟩ ha
+        exact a
+      })
+      (by {
+        rintro ⟨a, hfin⟩ ha 
+        simp
+        simp at ha 
+        exact ha
+      })
+      (by aesop)
+      (by {
+        intro b hb
+        simp 
+        exists ⟨b, by {
+          aesop (add safe (by omega))
+        }⟩
+        simp 
+        aesop
+      })
+      (by {
+        rintro ⟨a, hfin⟩ ha
+        simp [liftF, hfin ]
+        ring
+      })]
+    rfl
+    rfl 
+    rfl
+    rfl
+  rw [Finset.mul_sum]
+  rw [neg_add, add_comm]
+  rw [←add_assoc]
+  rw [add_neg_cancel]
+  simp 
+  apply Finset.sum_bij (by {
+    intro a ha 
+    exact a.val - e
+  })
+  · rintro ⟨a, ha⟩
+    simp
+    omega 
+  · aesop (add safe (by omega))
+  · intro b hb 
+    exists ⟨b + e, by aesop (add safe (by omega))⟩
+    aesop
+  · rintro ⟨a, hfin⟩ ha 
+    simp 
+    simp at ha
+    simp [liftF]
+    aesop (add safe (by ring))
 
 end
 
