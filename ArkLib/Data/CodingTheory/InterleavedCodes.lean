@@ -1,3 +1,9 @@
+/-
+Copyright (c) 2024-2025 ArkLib Contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Katerina Hristova, František Silváši
+-/
+
 import Mathlib.Algebra.Module.Submodule.Defs
 import Mathlib.Data.Matrix.Defs
 import Mathlib.Data.Matrix.RowCol
@@ -9,9 +15,19 @@ import ArkLib.Data.CodingTheory.LinearCodes
 import ArkLib.Data.CodingTheory.ReedSolomon
 import ArkLib.Data.CodingTheory.Prelims
 
+
 open Classical LinearCodes
 
 noncomputable section
+
+/-
+Definition of a `κ`-interleaved code `IC` of a linear code `LC` over a semiring `F`.
+Definition of distances for interleaved codes and statement for the relation between the minimal
+distance of an interleaved code and its underlying linear code.
+Statements of proximity results for Reed Solomon codes
+(`Lemma 4.3`, `Lemma 4.4` and `Lemma 4.5` from Ligero) with proximity parameter less than
+the minimal code distance divided by `3`.
+-/
 
 variable {F : Type*} [Semiring F]
          {κ ι: ℕ}
@@ -19,20 +35,19 @@ variable {F : Type*} [Semiring F]
 
 namespace InterleavedCodes
 
--- Question: in the abbrev, do we need to add the condition which makes a submodule of
--- the given type an interleaved code? (it's in the def below)
-
-/--
-  @KATY: Probably a bad name, I just followed the 'Submodule F (Fin ι → F)' for 'LinearCode' exmpl.
-         Feel free to either remove this altogether or name this better :).
--/
 abbrev MatrixSubmodule.{u} (κ ι : ℕ) (F : Type u) [Semiring F] : Type u :=
   Submodule F (Matrix (Fin κ) (Fin ι) F)
 
+/--
+The data needed to construct an interleaved code
+-/
 structure InterleavedCode (κ ι : ℕ) (F : Type*) [Semiring F] where
   MF : MatrixSubmodule κ ι F
   LC : LinearCode ι F
 
+/--
+The condition making the InterleavedCode structure an interleaved code.
+-/
 def InterleavedCode.isInterleaved (IC : InterleavedCode κ ι F) :=
   ∀ V ∈ IC.MF, ∀ i, V i ∈ IC.LC
 
@@ -46,10 +61,13 @@ def codeOfLinearCode (κ : ℕ) (LC : LinearCode ι F) : InterleavedCode κ ι F
   { MF := matrixSubmoduleOfLinearCode κ LC, LC := LC }
 
 lemma isInterleaved_codeOfLinearCode : (codeOfLinearCode κ LC).isInterleaved := by sorry
-  
+
 def lawfulInterleavedCodeOfLinearCode (κ : ℕ) (LC : LinearCode ι F) : LawfulInterleavedCode κ ι F :=
   ⟨codeOfLinearCode κ LC, isInterleaved_codeOfLinearCode⟩
 
+/--
+distance between codewords `U` and `V` in a `κ`-interleaved code.
+ -/
 def distCodewords (U V : Matrix (Fin κ) (Fin ι) F) : ℕ :=
   (Matrix.neqCols U V).card
 
@@ -62,7 +80,7 @@ def minDist (IC : MatrixSubmodule κ ι F) : ℕ :=
   sInf { d : ℕ | ∃ U ∈ IC, ∃ V ∈ IC, distCodewords U V = d }
 
 /--
-`Δ IC` is the min distance of an interleaved code `IC`
+`Δ IC` is the min distance of an interleaved code `IC`.
 -/
 notation "Δ" IC => minDist IC
 

@@ -1,6 +1,16 @@
+/-
+Copyright (c) 2024-2025 ArkLib Contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Katerina Hristova, František Silváši, Julian Sutherland
+-/
+
 import Mathlib.InformationTheory.Hamming
 import Mathlib.Analysis.Normed.Field.Lemmas
 
+/-!
+proved definitions of relative Hamming distance and related notions for a linear code `LC`,
+including corner cases.
+-/
 open Classical
 
 variable {ι : Type*} [Fintype ι]
@@ -23,7 +33,7 @@ section
 variable [Nonempty ι]
 
 /--
-  relative Hamming distance between vectors `u` and `v`
+  relative Hamming distance between vectors `u` and `v`.
 -/
 def dist (u v : ι → F) : ℚ :=
   (hammingDist u v : ℚ) / (Fintype.card ι : ℚ)
@@ -43,10 +53,13 @@ lemma zero_le_relHammingDist : 0 ≤ dist u v := by
 end
 
 /--
-`δᵣ(u,v)` denotes the relative Hamming distance between vectors `u` and `v`
+`δᵣ(u,v)` denotes the relative Hamming distance between vectors `u` and `v`.
 -/
 notation "δᵣ(" u ", " v ")" => dist u v
 
+/--
+the range of the relative Hamming distance function.
+-/
 def distRange (ι : Type*) [Fintype ι] : Set ℚ :=
   { d : ℚ | ∃ d' : ℕ, d' ≤ Fintype.card ι ∧ d = d' / Fintype.card ι }
 
@@ -72,7 +85,7 @@ lemma finite_relHammingDistRange [Nonempty ι] : (distRange ι).Finite := by
 lemma finite_offDiag [Finite F] : C.offDiag.Finite := Set.Finite.offDiag (Set.toFinite _)
 
 /--
-The set of possible distances between distinct codewords of `C`
+The set of possible distances between distinct codewords of `C`.
 -/
 def d_C (C : Set (ι → F)) : Set ℚ :=
   { d : ℚ | ∃ p ∈ Set.offDiag C, δᵣ(p.1, p.2) = d }
@@ -90,7 +103,7 @@ lemma finite_d_C [Nonempty ι] : (d_C C).Finite :=
 end
 
 /--
-relative Hamming Distance of a code C over a semiring F
+relative Hamming Distance of a code `C`.
 -/
 def minDistCode [Nonempty ι] (C : Set (ι → F)) : ℚ :=
   have : Fintype (d_C C) := @Fintype.ofFinite _ finite_d_C
@@ -120,7 +133,7 @@ lemma finite_d_w [Nonempty ι] : (d_w w C).Finite :=
 instance [Nonempty ι] : Fintype (d_w w C) := @Fintype.ofFinite _ finite_d_w
 
 /--
-relative Hamming distance between a vector `w` and a code `C`
+relative Hamming distance between a vector `w` and a code `C`.
 -/
 def distToCode [Nonempty ι] (w : ι → F) (C : Set (ι → F)) : ℚ :=
   if h : (d_w w C).Nonempty
