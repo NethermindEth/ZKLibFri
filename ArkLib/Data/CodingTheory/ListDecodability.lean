@@ -45,13 +45,15 @@ distance metric.
 def listOfCloseCodewordsRel (C : Code ι F) (y : Fin ι → F) (r : ℝ) : ℕ :=
   Nat.card (relHammingBall C y r)
 
-/- Note that in the definition below, the number of codewords `ℓ` in the Hamming ball of radius `r`
+/--
+The code `C` is `(r,ℓ)`-list decodable.
+
+- Remark:
+   Note that the number of codewords `ℓ` in the Hamming ball of radius `r`
    centred around `y` is a real number. The reasoning for this is to accommodate the statement of
    the Johnson Bound Theorem. For simplicity and ease of proving statements, `ℓ` can be considered a
    a natural number by taking the floor of the real value. This will not lead to information loss
-   since the cardinality of the set of close codewords is a natural number anyway. -/
-/--
-Definition of `(r,ℓ)`-list decodable code.
+   since the cardinality of the set of close codewords is a natural number anyway.
 -/
 def listDecodable (C : Code ι F) (r : ℝ) (ℓ : ℝ) : Prop :=
   ∀ y : Fin ι → F, listOfCloseCodewordsRel C y r ≤ ℓ
