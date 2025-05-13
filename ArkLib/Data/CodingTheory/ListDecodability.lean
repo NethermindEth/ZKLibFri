@@ -5,6 +5,7 @@ import ArkLib.Data.CodingTheory.RelativeHammingDistance
 
 open Classical
 
+namespace ListDecodable
 
 noncomputable section
 
@@ -16,26 +17,27 @@ abbrev Code.{u} (ι : ℕ) (S : Type u) : Type u := Set (Fin ι → S)
 /--
 Hamming ball of radius `r` centred at a word `y`.
 -/
-def hammingBall (C : Code ι F) (y : Fin ι → F) (r : ℕ) : Set (Fin ι → F) :=
+def hammingBall (C : Code ι F) (y : Fin ι → F) (r : ℕ) : Code ι F :=
   { c | c ∈ C ∧ hammingDist y c ≤ r }
+
 /--
 Ball of radius `r` centred at a word `y` with respect to the relative Hamming distance.
 -/
-def relHammingBall (C : Code ι F) (y : Fin ι → F) (r : ℝ)  : Set (Fin ι → F) :=
+def relHammingBall (C : Code ι F) (y : Fin ι → F) (r : ℝ)  : Code ι F :=
   { c | c ∈ C ∧ relHammingDist y c ≤ r }
 
 /--
 The number of close codewords to a given word `y` with respect to the Hamming distance metric.
 -/
-def listOfCloseCodewords (C : Code ι F) (y : Fin ι → F) (r : ℕ) : ℕ∞ :=
-  { c | c ∈ C ∧ hammingDist y c ≤ r }.encard
+def listOfCloseCodewords (C : Code ι F) (y : Fin ι → F) (r : ℕ) : ℕ :=
+  Nat.card (hammingBall C y r)
 
 /--
 The number of close codewords to a given word `y` with respect to the relative Hamming
 distance metric.
 -/
-def listOfCloseCodewordsRel (C : Code ι F) (y : Fin ι → F) (r : ℝ) : ℕ∞ :=
-  { c | c ∈ C ∧ relHammingDist y c ≤ r }.encard
+def listOfCloseCodewordsRel (C : Code ι F) (y : Fin ι → F) (r : ℝ) : ℕ :=
+  Nat.card (relHammingBall C y r)
 
 /--
 Definition of `(r,ℓ)`-list decodable code.
@@ -43,4 +45,21 @@ Definition of `(r,ℓ)`-list decodable code.
 def listDecodable (C : Code ι F) (r : ℝ) (ℓ : ℕ) : Prop :=
   ∀ y : Fin ι → F, listOfCloseCodewordsRel C y r ≤ ℓ
 
+section
+
+variable {C : Code ι F} {y : Fin ι → F} {n : ℕ} {r : ℝ} {ℓ : ℕ}
+
+lemma listOfCloseCodewords_eq_zero :
+  listOfCloseCodewords C y n = 0 ↔ IsEmpty (hammingBall C y n) ∨ Infinite (hammingBall C y n) := by
+  simp [listOfCloseCodewords, Nat.card_eq_zero]
+
+lemma listOfCloseCodewordsRel_eq_zero :
+  listOfCloseCodewordsRel C y r = 0 ↔
+  IsEmpty (relHammingBall C y r) ∨ Infinite (relHammingBall C y r) := by
+  simp [listOfCloseCodewordsRel, Nat.card_eq_zero]
+
 end
+
+end
+
+end ListDecodable
