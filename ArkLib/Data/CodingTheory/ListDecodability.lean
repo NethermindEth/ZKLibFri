@@ -37,14 +37,10 @@ distance metric.
 def listOfCloseCodewordsRel (C : Code ι F) (y : Fin ι → F) (r : ℝ) : ℕ∞ :=
   { c | c ∈ C ∧ relHammingDist y c ≤ r }.encard
 
-
 /--
 Definition of `(r,ℓ)`-list decodable code.
 -/
-def listDecodable (C : Code ι F) (r : ℝ) (ℓ : ℕ) (hr : 0 ≤ r ∧ r ≤ 1) : Prop :=
-  if ∀ y : Fin ι → F, (relHammingBall C y r).Finite then
-   ∀ y : Fin ι → F, listOfCloseCodewordsRel C y r ≤ ℓ
-  else False
-
+def listDecodable (C : Code ι F) (r : ℝ) (ℓ : ℕ) : Prop :=
+  ∀ y : Fin ι → F, listOfCloseCodewordsRel C y r ≤ ℓ
 
 end
