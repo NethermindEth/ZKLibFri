@@ -147,7 +147,7 @@ protected lemma roots_of_eloc_poly {x : F}
   ∃ i, i < n ∧ f i ≠ p.eval (ωs i) := by
   induction' n with n ih generalizing x
   · aesop
-  · rw [elocPoly_succ, Polynomial.eval_mul, mul_eq_zero] at h
+  · rw [elocPoly_succ, eval_mul, mul_eq_zero] at h
     rcases h with heval | heval
     · obtain ⟨i, _⟩ := ih heval
       aesop (add safe [(by existsi i), (by omega)])
@@ -166,7 +166,7 @@ protected lemma errors_are_roots_of_elocPoly {i : ℕ}
 protected lemma elocPoly_ne_zero : ElocPoly n ωs f p ≠ 0 := by
   induction' n with n _
   · simp
-  · aesop (add simp [sub_eq_zero]) (add safe forward (Polynomial.X_ne_C (ωs n)))
+  · aesop (add simp [sub_eq_zero]) (add safe forward (X_ne_C (ωs n)))
 
 @[simp]
 protected lemma elocPoly_leading_coeff_one : (ElocPoly n ωs f p).leadingCoeff = 1 := by
@@ -378,7 +378,7 @@ lemma E_and_Q_are_a_solution {e k : ℕ} [NeZero n]
   (hp_deg : p.natDegree ≤ k - 1) 
   (he : 2 * e < n - k + 1)
   : IsBerlekampWelchSolution e k ωs f (E_and_Q_to_a_solution e (E ωs f p e) (Q ωs f p e)) := by
-  refine is_berlekamp_welch_solution_ext (fun i ↦ ?p)
+  refine is_berlekamp_welch_solution_ext fun i ↦ ?p
   rw [←Matrix.mulVecᵣ_eq]
   simp [Matrix.mulVecᵣ, dotProduct]
   rw [Finset.sum_ite]
