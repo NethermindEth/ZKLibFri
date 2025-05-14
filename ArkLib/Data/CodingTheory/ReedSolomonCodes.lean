@@ -73,7 +73,6 @@ lemma natDegree_lt_of_lbounded_zero_coeff [Semiring F] {p : F[X]} {deg : ℕ} [N
   (h : ∀ i, deg ≤ i → p.coeff i = 0) : p.natDegree < deg := by
   aesop (add unsafe [(by by_contra), (by specialize h p.natDegree)])
 
---katy : this IS the encoding map?
 def polynomialOfCoeffs [Semiring F] {deg : ℕ} [NeZero deg] (coeffs : Fin deg → F) : F[X] :=
   ⟨
     Finset.map ⟨Fin.val, Fin.val_injective⟩ {i | coeffs i ≠ 0},
@@ -107,8 +106,15 @@ lemma polynomialOfCoeffs_mem_degreeLT
   polynomialOfCoeffs coeffs ∈ degreeLT F deg := by
   aesop (add simp Polynomial.mem_degreeLT)
 
--- lemma eval_polynomialOfCoeffs [Semiring F] {deg ι : ℕ} [NeZero deg] [NeZero ι] {coeffs : Fin deg → F} {α : Fin ι → F} :
- -- eval α (@polynomialOfCoeffs F inferInstance deg inferInstance coeffs) = 0 ↔ sorry := by sorry
+lemma eval_polynomialOfCoeffs [Semiring F] {deg : ℕ} [NeZero deg] {coeffs : Fin deg → F} {α : F} :
+ eval α (@polynomialOfCoeffs F inferInstance deg inferInstance coeffs) = ∑ i : Fin deg, coeffs i * α ^ ↑i.1 := by
+ unfold polynomialOfCoeffs
+ rw [eval_eq_sum, sum_def]
+ simp
+ apply Finset.sum_bijective (e := id )
+ simp
+
+
 
 lemma natDegree_lt_of_mem_degreeLT
   [Semiring F] {deg : ℕ} [NeZero deg] {p : F[X]} (h : p ∈ degreeLT F deg) : p.natDegree < deg := by
@@ -205,10 +211,22 @@ theorem minDist [Field F] [Inhabited F] {deg : ℕ} {α : Fin ι ↪ F} [NeZero 
       swap
       simp
       rcases h3 with ⟨i, hi⟩
+      rw [eq_p] at hi
+      rw [eval_polynomialOfCoeffs] at hi
+
+
+
+
+
       rcases deg with _ | deg'
       aesop
       simp
       rw [eq_p] at hi
+      rw [eval_polynomialOfCoeffs] at hi
+
+
+
+
       unfold polynomialOfCoeffs at hi
       simp at hi
 
