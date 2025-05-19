@@ -184,10 +184,7 @@ private lemma BerlekampWelchCondition_to_Solution {e k : ℕ} [NeZero n]
       rintro ⟨a, ha⟩
       simp
       omega
-    }) (by 
-      aesop 
-        (add safe (by omega))
-        (add safe forward Fin.ext)
+    }) (by simp; omega
     ) (by {
       rintro ⟨b, hb⟩ hh
       exists ⟨b + e, by 
