@@ -282,7 +282,7 @@ lemma solution_to_Q_natDegree {e k : ℕ} {v : Fin (2 * e + k) → F} :
   rw [WithBot.unbotD_le_iff] <;>
   aesop (add safe [(by omega)])
 
-lemma solution_to_BerlekampWelch_condition' {e : ℕ} 
+lemma solution_to_BerlekampWelch_condition₀ {e : ℕ} 
   [NeZero n] 
   {ωs f : Fin n → F}
   {v : Fin (2 * e + 0) → F}
@@ -387,15 +387,14 @@ lemma solution_to_BerlekampWelch_condition' {e : ℕ}
       apply solution_to_Q_natDegree
     }⟩
 
-
 lemma solution_to_BerlekampWelch_condition {e k : ℕ} 
   [NeZero n] 
   {ωs f : Fin n → F}
   {v : Fin (2 * e + k) → F}
-  (hk : 1 ≤ k)
   (h_sol : IsBerlekampWelchSolution e k ωs f v)
   : BerlekampWelchCondition e k ωs f (solution_to_E e k v) (solution_to_Q e k v) := by
-  exact ⟨by {
+  by_cases hk : 1 ≤ k 
+  · exact ⟨by {
     intro i
     symm
     conv =>
@@ -481,7 +480,11 @@ lemma solution_to_BerlekampWelch_condition {e k : ℕ}
   by simp,
   by simp,
   by simp⟩
-  
+  · simp at hk 
+    subst hk
+    apply solution_to_BerlekampWelch_condition₀ h_sol
+end
+
 lemma BerlekampWelch_E_ne_0 {e k : ℕ}
   {ωs f : Fin n → F}
   {E Q : Polynomial F}
@@ -490,7 +493,13 @@ lemma BerlekampWelch_E_ne_0 {e k : ℕ}
   have h_deg := h_cond.E_natDegree
   have h_leadCoeff := h_cond.E_leadingCoeff
   aesop
-  
+ 
+section 
+
+open Polynomial 
+
+variable [DecidableEq F]
+
 lemma BerlekampWelch_Q_ne_0 {e k : ℕ} 
   [NeZero n] 
   {ωs f : Fin n → F}
@@ -522,17 +531,72 @@ lemma solution_to_Q_ne_0 {e k : ℕ}
   [NeZero n] 
   {ωs f : Fin n → F}
   {v : Fin (2 * e + k) → F}
-  (hk : 1 ≤ k)
   (h_dist : e < Δ₀(f, 0))
   (h_sol : IsBerlekampWelchSolution e k ωs f v)
   (h_inj : Function.Injective ωs)
   : solution_to_Q e k v ≠ 0 := 
     BerlekampWelch_Q_ne_0 
-      (solution_to_BerlekampWelch_condition hk h_sol) 
+      (solution_to_BerlekampWelch_condition h_sol) 
       h_dist
       h_inj
 
-
+lemma E_and_Q_unique 
+  [NeZero n]
+  {e k : ℕ} 
+  {E Q E' Q' : Polynomial F} 
+  {ωs f : Fin n → F}
+  (he : 2 * e < n - k + 1)
+  (hk_n : k ≤ n)
+  (h_dist : e < Δ₀(f, 0))
+  (h_inj : Function.Injective ωs)
+  (h_bw₁ : BerlekampWelchCondition e k ωs f E Q)
+  (h_bw₂ : BerlekampWelchCondition e k ωs f E' Q')
+: E * Q' = E' * Q := by
+  let R := E * Q' - E' * Q
+  have hr_deg : R.natDegree ≤ 2 * e + k - 1 := by
+    simp [R]
+    apply Nat.le_trans (natDegree_add_le _ _)
+    simp  [
+      natDegree_mul 
+        (BerlekampWelch_E_ne_0 h_bw₁) 
+        (BerlekampWelch_Q_ne_0 h_bw₂ h_dist h_inj),
+      natDegree_neg,
+      natDegree_mul 
+        (BerlekampWelch_E_ne_0 h_bw₂)
+        (BerlekampWelch_Q_ne_0 h_bw₁ h_dist h_inj)
+      ]
+    aesop 
+      (add simp [Nat.max_le, h_bw₁.E_natDegree, h_bw₂.E_natDegree])
+      (add safe forward (h_bw₁.Q_natDegree))
+      (add safe forward (h_bw₂.Q_natDegree))
+      (add safe (by omega))
+  by_cases hr : R = 0 
+  · rw [←add_zero (E' * Q)
+       , ←hr]
+    ring
+  · let roots := Multiset.ofList <| List.map ωs  
+        (List.finRange n)
+    have hsub : (⟨roots, by 
+        rw [Multiset.coe_nodup, List.nodup_map_iff h_inj]        
+         ;
+        aesop 
+          (add simp [Multiset.coe_nodup])
+          (add simp [List.Nodup, List.pairwise_iff_get])
+      ⟩ : Finset F).val ⊆ R.roots := by
+      {
+        intro x hx
+        aesop 
+          (add simp [mem_roots, roots, R, h_bw₁.cond, h_bw₂.cond])
+          (add safe (by ring))
+      }
+    have hcard := card_le_degree_of_subset_roots hsub
+    by_cases hk : 1 ≤ k 
+    · aesop (add safe (by omega))
+    · simp at hk 
+      by_cases he: e = 0
+      · aesop
+      · aesop (add safe (by omega))
 
 end
+
 end BerlekampWelch
