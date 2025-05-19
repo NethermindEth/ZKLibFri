@@ -66,32 +66,6 @@ lemma E_and_Q_to_a_solution_coeff
   rcases Q with ⟨⟨_, g, _⟩⟩
   simp [E_and_Q_to_a_solution]
 
-def truncate (p : Polynomial F) (n : ℕ) : Polynomial F 
-  := match p with
-  | ⟨⟨supp, f, h⟩⟩ =>  ⟨⟨supp ∩ Finset.range n, fun i ↦ if i < n then f i else 0, by aesop⟩⟩
-
-@[simp]
-lemma truncate_coeff 
-  {n : ℕ}
-  {p : Polynomial F} {i : ℕ}
-  : (truncate p n).coeff i = if i < n then p.coeff i else 0 := rfl
-
-@[simp]
-lemma truncate_n_0 
-  {p : Polynomial F}
-  : (truncate p 0) = 0 := by
-  apply Polynomial.ext 
-  simp
-
-lemma truncate_natDegree 
-  {n : ℕ}
-  {p : Polynomial F} 
-  (hn : 0 < n)
-  : (truncate p n).natDegree < n := by
-  simp [truncate, Polynomial.natDegree, Polynomial.degree]
-  rw [WithBot.unbotD_lt_iff] <;>
-  aesop (add simp [Finset.max]) (add safe [(by omega)])
-
 section 
 
 private lemma BerlekampWelchCondition_to_Solution {e k : ℕ} [NeZero n]
@@ -547,7 +521,8 @@ lemma E_and_Q_unique
   {ωs f : Fin n → F}
   (he : 2 * e < n - k + 1)
   (hk_n : k ≤ n)
-  (h_dist : e < Δ₀(f, 0))
+  (h_Q : Q ≠ 0)
+  (h_Q' : Q' ≠ 0)
   (h_inj : Function.Injective ωs)
   (h_bw₁ : BerlekampWelchCondition e k ωs f E Q)
   (h_bw₂ : BerlekampWelchCondition e k ωs f E' Q')
@@ -559,11 +534,11 @@ lemma E_and_Q_unique
     simp  [
       natDegree_mul 
         (BerlekampWelch_E_ne_0 h_bw₁) 
-        (BerlekampWelch_Q_ne_0 h_bw₂ h_dist h_inj),
+        h_Q',
       natDegree_neg,
       natDegree_mul 
         (BerlekampWelch_E_ne_0 h_bw₂)
-        (BerlekampWelch_Q_ne_0 h_bw₁ h_dist h_inj)
+        h_Q
       ]
     aesop 
       (add simp [Nat.max_le, h_bw₁.E_natDegree, h_bw₂.E_natDegree])
