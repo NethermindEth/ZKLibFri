@@ -224,6 +224,7 @@ private lemma BerlekampWelchCondition_to_Solution {e k : ℕ} [NeZero n]
     rw [←add_sub_assoc]
     rw [add_comm (b := Polynomial.eval _ _)]
     rw [add_neg_cancel]
+    simp [zero_sub, h_E_coeff]
   }
 
 
