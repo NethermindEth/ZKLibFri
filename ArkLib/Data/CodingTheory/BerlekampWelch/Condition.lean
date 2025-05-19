@@ -19,8 +19,12 @@ namespace BerlekampWelch
 variable {α : Type} {F : Type} [Field F]
          {n : ℕ} 
 
-def BerlekampWelchCondition (ωs f : Fin n → F) (E Q : Polynomial F): Prop
-  := ∀ i : Fin n, Q.eval (ωs i) = (f i) * E.eval (ωs i) 
+structure BerlekampWelchCondition (e k : ℕ) (ωs f : Fin n → F) (E Q : Polynomial F): Prop where
+  cond: ∀ i : Fin n, Q.eval (ωs i) = (f i) * E.eval (ωs i) 
+  E_natDegree : E.natDegree = e
+  E_leadingCoeff : E.coeff e = 1 
+  Q_natDegree : Q.natDegree ≤ e + k - 1  
+
 
 def BerlekampWelchMatrix [NeZero n] 
   (e k : ℕ) 
@@ -93,10 +97,143 @@ section
 
 variable [DecidableEq F]
 
+private lemma BerlekampWelchCondition_to_Solution {e k : ℕ} [NeZero n]
+  {ωs f : Fin n → F} {E Q : Polynomial F} 
+  (hk : 1 ≤ k)
+  (h : BerlekampWelchCondition e k ωs f E Q)
+  : IsBerlekampWelchSolution e k ωs f (E_and_Q_to_a_solution e E Q) := by
+  rcases h with ⟨h_cond, h_E_deg, h_E_coeff, h_Q_deg⟩
+  apply is_berlekamp_welch_solution_ext
+  intro i
+  rw [←Matrix.mulVecᵣ_eq]
+  simp [Matrix.mulVecᵣ, dotProduct]
+  rw [Finset.sum_ite]
+  simp [BerlekampWelchMatrix]
+  let seg_e := insert ⟨e, by omega⟩ {x : Fin (2 * e + k) | ↑x < e} 
+  have hhh : ∑ i_1 ∈ {x : Fin (2 * e + k) | ↑x < e}, ωs i ^ (↑i_1 : ℕ) * E.coeff ↑i_1 = 
+        ∑ i_1 ∈ seg_e, ωs i ^ (↑i_1 : ℕ) * E.coeff ↑i_1 - 
+                ωs i ^ ↑e * E.coeff ↑e := by simp [seg_e]
+  have hhhr : ∑ x ∈ {x: Fin (2 * e + k) | ↑x < e + k }, ωs i ^ (↑x : ℕ) * Q.coeff ↑x 
+    =∑ x ∈ Finset.range (e + k), ωs i ^ x * Q.coeff x := by
+      apply Finset.sum_bij (i := fun a ha => a.val)
+        <;> try aesop (config := {warnOnNonterminal := false}) (add safe (by omega))
+      exists ⟨b, by omega⟩
+  conv =>
+    lhs
+    congr 
+    · rw [Finset.sum_ite_of_true (by aesop),
+        Finset.sum_equiv (t := {x : Fin (2 * e + k) | ↑x < e })
+          (g := fun j => f i * (ωs i ^ (↑j : ℕ) * E.coeff ↑j))
+          (Equiv.refl (Fin (2 * e + k))) 
+          (by aesop)
+          (by {
+            intro j hj
+            rw [mul_assoc]
+            rfl
+          }),
+          ←Finset.mul_sum _ _ (f i),
+          hhh,
+          Finset.sum_bij (t := Finset.range e.succ)
+            (i := fun a ha => a.val)
+            (hi := by 
+              aesop 
+                (add simp seg_e)
+                (add safe (by omega))
+            )
+            (i_inj := by aesop (add simp seg_e))
+            (i_surj := by {
+              simp [seg_e]
+              intro b hb 
+              rcases hb with _ | hb <;> try simp 
+              right
+              exists ⟨b, by {
+                apply Nat.lt_trans (Nat.lt_of_succ_le hb)
+                omega
+              }⟩
+            })
+            (h := by {
+              intro a ha
+              rcases a with ⟨a, h_lt⟩
+              simp
+              rfl 
+            }), 
+          ←Polynomial.sum_eq_of_subset _ (by simp) (by {
+             intro x hx
+             simp 
+             simp at hx 
+             rw [←Polynomial.ite_le_natDegree_coeff _ _ inferInstance] at hx 
+             split_ifs at hx with hif 
+             rw [h_E_deg] at hif 
+             omega 
+             tauto 
+          }),
+          polynomial_sum_ext 
+            (g := fun x a => a * ωs i ^ x) 
+            (by aesop 
+              (add safe 
+                (by ring_nf))),
+          ←Polynomial.eval_eq_sum] 
+    rfl
+  · {
+    rw [Finset.sum_ite_of_false (by simp)]
+    rw [Finset.sum_bij (g := fun x => -(ωs i ^ (↑x : ℕ) * Q.coeff ↑x)) 
+      (t := { x : Fin (2 * e + k)  | x < e + k }) (by {
+      intro a ha 
+      exact (⟨↑a - e, by omega⟩ : Fin (2 * e + k))
+    }) (by {
+      rintro ⟨a, ha⟩
+      simp
+      omega
+    }) (by 
+      aesop 
+        (add safe (by omega))
+        (add safe forward Fin.ext)
+    ) (by {
+      rintro ⟨b, hb⟩ hh
+      exists ⟨b + e, by 
+        simp at hh
+        omega
+      ⟩
+      simp
+    }) (by {
+     rintro ⟨a, hfin⟩ ha
+     simp at ha 
+     simp only [Fin.val]
+    })]
+    rw [Finset.sum_neg_distrib]
+    rw [hhhr]
+    rw [←Polynomial.sum_eq_of_subset (p := Q) (fun j x => ωs i ^ j * x) (by simp) (by {
+        intro x hx 
+        simp 
+        simp at hx 
+        rw [←Polynomial.ite_le_natDegree_coeff _ _ inferInstance ] at hx 
+        split_ifs at hx with hif
+        apply Nat.lt_of_lt_of_le hif
+        trans 
+        apply Nat.add_le_add_left h_Q_deg
+        omega
+        aesop 
+     })]
+    rw [polynomial_sum_ext 
+            (g := fun x a => a * ωs i ^ x) 
+            (by {
+              intro j x 
+              simp 
+              ring
+            })]
+    rw [←Polynomial.eval_eq_sum]
+    rw [mul_sub]
+    rw [←h_cond, add_comm]
+    rw [←add_sub_assoc]
+    rw [add_comm (b := Polynomial.eval _ _)]
+    rw [add_neg_cancel]
+  }
+
+
 lemma E_and_Q_are_a_solution {e k : ℕ} [NeZero n]
   {ωs f : Fin n → F} {E Q : Polynomial F} 
   : 
-  BerlekampWelchCondition ωs f E Q ↔
+  BerlekampWelchCondition e k ωs f E Q ↔
   IsBerlekampWelchSolution e k ωs f (E_and_Q_to_a_solution e E Q) := by
   unfold BerlekampWelchCondition IsBerlekampWelchSolution
   by_cases hk : 1 ≤ k 
