@@ -1,19 +1,10 @@
-import Init.Data.List.FinRange
 import Mathlib.Algebra.Field.Basic
 import Mathlib.Algebra.Polynomial.Basic
-import Mathlib.Algebra.Polynomial.Degree.Definitions
-import Mathlib.Algebra.Polynomial.FieldDivision
-import Mathlib.Data.Finset.Insert
-import Mathlib.Data.Fintype.Card
-import Mathlib.Data.Matrix.Mul 
-import Mathlib.Data.Matrix.Reflection
 
 import ArkLib.Data.CodingTheory.Basic
-import ArkLib.Data.CodingTheory.BerlekampWelch.ElocPoly
 import ArkLib.Data.CodingTheory.BerlekampWelch.Condition
+import ArkLib.Data.CodingTheory.BerlekampWelch.ElocPoly
 import ArkLib.Data.CodingTheory.BerlekampWelch.Sorries
-import ArkLib.Data.CodingTheory.BerlekampWelch.ToMathlib
-import ArkLib.Data.CodingTheory.HammingDistance.Lemmas
 
 namespace BerlekampWelch
 
@@ -24,11 +15,11 @@ variable [DecidableEq F]
 open ElocPoly
 open Polynomial
 
-noncomputable def E {n : ℕ} (ωs : Fin n → F) 
+private noncomputable def E {n : ℕ} (ωs : Fin n → F) 
   (f : Fin n → F) (p : Polynomial F) (e : ℕ) : Polynomial F :=
   X ^ (e - (Δ₀(f, p.eval ∘ ωs) : ℕ)) * ElocPolyF (ωs := ωs) f p
 
-lemma E_natDegree 
+private lemma E_natDegree 
   {e : ℕ} 
   {ωs f : Fin n → F} 
   (h : (Δ₀(f, p.eval ∘ ωs) : ℕ) ≤ e) : 
@@ -39,14 +30,14 @@ lemma E_natDegree
   simp only [natDegree_pow, natDegree_X, mul_one, elocPolyF_deg] 
   rw [Nat.sub_add_cancel (by omega)]
 
-lemma E_ne_0 {e : ℕ} {ωs f : Fin n → F} : (E ωs f p e) ≠ 0 := by
+private lemma E_ne_0 {e : ℕ} {ωs f : Fin n → F} : (E ωs f p e) ≠ 0 := by
   unfold E
   intro contr
   rw [mul_eq_zero] at contr
   rcases contr with contr | contr
     <;> try simp at contr 
 
-lemma errors_are_roots_of_E {i : Fin n} {e} {ωs f : Fin n → F}
+private lemma errors_are_roots_of_E {i : Fin n} {e} {ωs f : Fin n → F}
   (h : f i ≠ p.eval (ωs i)) : (E ωs f p e).eval (ωs i) = 0  := by
   unfold E 
   aesop 
@@ -54,11 +45,11 @@ lemma errors_are_roots_of_E {i : Fin n} {e} {ωs f : Fin n → F}
     (add simp [BerlekampWelch.errors_are_roots_of_elocPolyF])
 
 @[simp]
-lemma E_leading_coeff {e} {ωs f : Fin n → F}
+private lemma E_leading_coeff {e} {ωs f : Fin n → F}
   : (E ωs f p e).leadingCoeff = 1 := by
   simp [E]
 
-lemma E_leading_coeff' {e} {ωs f : Fin n → F}
+private lemma E_leading_coeff' {e} {ωs f : Fin n → F}
   (h_dist : (Δ₀(f, p.eval ∘ ωs) : ℕ) ≤ e) 
   : (E ωs f p e).coeff e = 1 := by
   conv =>
@@ -70,11 +61,11 @@ lemma E_leading_coeff' {e} {ωs f : Fin n → F}
   rw [Polynomial.coeff_natDegree]
   simp
 
-noncomputable def Q {n : ℕ} (ωs : Fin n → F) 
+private noncomputable def Q {n : ℕ} (ωs : Fin n → F) 
   (f : Fin n → F) (p : Polynomial F) (e : ℕ) : Polynomial F :=
   p * (E ωs f p e)
 
-lemma Q_natDegree 
+private lemma Q_natDegree 
   {e : ℕ} {ωs f : Fin n → F}
   (h : (Δ₀(f, p.eval ∘ ωs) : ℕ) ≤ e) : 
   (Q ωs f p e).natDegree ≤ e + p.natDegree := by
@@ -85,7 +76,7 @@ lemma Q_natDegree
       (add simp [ natDegree_mul, E_ne_0, E_natDegree]) 
       (add safe (by omega))
 
-lemma Q_ne_0 
+private lemma Q_ne_0 
   {e : ℕ} {ωs f : Fin n → F}
   (hne : p ≠ 0)
   : Q ωs f p e ≠ 0 := by
@@ -93,7 +84,7 @@ lemma Q_ne_0
   aesop 
     (add simp [E_ne_0])
 
-lemma solution_to_Q_from_Q {e k : ℕ} {ωs f : Fin n → F}
+private lemma solution_to_Q_from_Q {e k : ℕ} {ωs f : Fin n → F}
   (h_p_deg : p.natDegree < k)
   (h_dist : (Δ₀(f, p.eval ∘ ωs) : ℕ) ≤ e) 
   : solution_to_Q e k (E_and_Q_to_a_solution e (E ωs f p e) (Q ωs f p e)) = Q ωs f p e := by
@@ -112,7 +103,7 @@ lemma solution_to_Q_from_Q {e k : ℕ} {ωs f : Fin n → F}
       simp at hdeg 
       omega 
   
-lemma solution_to_E_from_E {e k : ℕ} {ωs f : Fin n → F}
+private lemma solution_to_E_from_E {e k : ℕ} {ωs f : Fin n → F}
   (h_p_deg : p.natDegree < k)
   (h_dist : (Δ₀(f, p.eval ∘ ωs) : ℕ) ≤ e) 
   : solution_to_E e k (E_and_Q_to_a_solution e (E ωs f p e) (Q ωs f p e)) = E ωs f p e := by
@@ -131,7 +122,7 @@ lemma solution_to_E_from_E {e k : ℕ} {ωs f : Fin n → F}
     simp at hdeg 
     omega 
 
-lemma E_and_Q_BerlekampWelch_condition {e k : ℕ} {ωs f : Fin n → F}
+private lemma E_and_Q_BerlekampWelch_condition {e k : ℕ} {ωs f : Fin n → F}
   (h_p_deg : p.natDegree < k)
   (h_dist : (Δ₀(f, p.eval ∘ ωs) : ℕ) ≤ e) 
   : BerlekampWelchCondition e k ωs f (E ωs f p e) (Q ωs f p e) := by
