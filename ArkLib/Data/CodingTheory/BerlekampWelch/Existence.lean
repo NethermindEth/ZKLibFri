@@ -1,3 +1,8 @@
+/-
+Copyright (c) 2024-2025 ArkLib Contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: František Silváši, Ilia Vlasov
+-/
 import Mathlib.Algebra.Field.Basic
 import Mathlib.Algebra.Polynomial.Basic
 
@@ -25,17 +30,15 @@ private lemma E_natDegree
   (h : (Δ₀(f, p.eval ∘ ωs) : ℕ) ≤ e) : 
   (E (ωs := ωs) f p e).natDegree = e  
   := by
-  unfold E
+  simp only [E]
   rw [natDegree_mul (by aesop) (by aesop)]
-  simp only [natDegree_pow, natDegree_X, mul_one, elocPolyF_deg] 
-  rw [Nat.sub_add_cancel (by omega)]
+  aesop 
+    (add simp [natDegree_mul])
+    (erase simp [BerlekampWelch.elocPolyF_eq_elocPoly'])
+    (add safe (by omega))
 
 private lemma E_ne_0 {e : ℕ} {ωs f : Fin n → F} : (E ωs f p e) ≠ 0 := by
-  unfold E
-  intro contr
-  rw [mul_eq_zero] at contr
-  rcases contr with contr | contr
-    <;> try simp at contr 
+  aesop (add simp [E])
 
 private lemma errors_are_roots_of_E {i : Fin n} {e} {ωs f : Fin n → F}
   (h : f i ≠ p.eval (ωs i)) : (E ωs f p e).eval (ωs i) = 0  := by
@@ -51,14 +54,9 @@ private lemma E_leading_coeff {e} {ωs f : Fin n → F}
 private lemma E_leading_coeff' {e} {ωs f : Fin n → F}
   (h_dist : (Δ₀(f, p.eval ∘ ωs) : ℕ) ≤ e) 
   : (E ωs f p e).coeff e = 1 := by
-  conv =>
-    lhs 
-    congr 
-    rfl 
-    rw [←E_natDegree h_dist]
-    rfl
-  rw [Polynomial.coeff_natDegree]
-  simp
+  generalize he : (E ωs f p e) = E 
+  rw [←E_natDegree h_dist]
+  aesop
 
 private noncomputable def Q {n : ℕ} (ωs : Fin n → F) 
   (f : Fin n → F) (p : Polynomial F) (e : ℕ) : Polynomial F :=
@@ -125,12 +123,11 @@ private lemma E_and_Q_BerlekampWelch_condition {e k : ℕ} {ωs f : Fin n → F}
   exact ⟨
   by {
     intro i
-    unfold Q E
     by_cases hi : f i = p.eval (ωs i)
-    · aesop 
-    · aesop 
+      <;> 
+      aesop 
         (erase simp BerlekampWelch.elocPolyF_eq_elocPoly')
-        (add simp [BerlekampWelch.errors_are_roots_of_elocPolyF])
+        (add simp [E, Q, BerlekampWelch.errors_are_roots_of_elocPolyF])
   },
   by simp [E_natDegree h_dist],
   by simp [E_leading_coeff' h_dist],
@@ -155,13 +152,9 @@ lemma Q'_div_E'_eq_p {e k : ℕ}
   have h_eq := E_and_Q_unique he hk_n (Q_ne_0 hp) h_Q' h_diff 
     (E_and_Q_BerlekampWelch_condition hp_deg h_ham)
     h_cond
-  apply And.intro
-  · simp [Q] at h_eq
-    rw [←mul_assoc, mul_comm _ (E _ _ _ _)] at h_eq 
-    aesop (add simp E_ne_0)
-  · simp [Q] at h_eq
-    rw [←mul_assoc, mul_comm _ (E _ _ _ _)] at h_eq 
-    aesop (add simp E_ne_0)
+  simp [Q] at h_eq
+  rw [←mul_assoc, mul_comm _ (E _ _ _ _)] at h_eq 
+  aesop (add simp E_ne_0)
 
 lemma linsolve_always_some_berlekamp_welch 
   {e k : ℕ}
@@ -170,17 +163,14 @@ lemma linsolve_always_some_berlekamp_welch
   (hp_deg: p.natDegree < k)
   (h_ham : (Δ₀(f, p.eval ∘ ωs) : ℕ) ≤ e)
   : linsolve (BerlekampWelchMatrix e k ωs f) (Rhs e ωs f) ≠ none := by
-  by_cases hk : 1 ≤ k
-  · intro contr
-    apply linsolve_none contr
-    exists E_and_Q_to_a_solution e (E ωs f p e) (Q ωs f p e)
-    rw [←IsBerlekampWelchSolution_def]
-    simp [
-      BerlekampWelchCondition_iff_Solution,
-      solution_to_Q_from_Q hp_deg h_ham, 
-      solution_to_E_from_E hp_deg h_ham,
-      E_and_Q_BerlekampWelch_condition hp_deg h_ham]
-  · simp at hk
-    simp [hk] at hp_deg
+  intro contr
+  apply linsolve_none contr
+  exists E_and_Q_to_a_solution e (E ωs f p e) (Q ωs f p e)
+  rw [←IsBerlekampWelchSolution_def]
+  simp [
+    BerlekampWelchCondition_iff_Solution,
+    solution_to_Q_from_Q hp_deg h_ham, 
+    solution_to_E_from_E hp_deg h_ham,
+    E_and_Q_BerlekampWelch_condition hp_deg h_ham]
 
 end BerlekampWelch
