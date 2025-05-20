@@ -14,7 +14,7 @@ def FriCommitSpec : OracleSpec Unit :=
 
 inductive Oracle where
   | RO
-  | PO : (Fin r) -> Oracle
+  | PO : (Fin r) → Oracle
 
 def FriQuerySpec : OracleSpec (Oracle r) :=
   fun i ↦ match i with
