@@ -39,10 +39,9 @@ private lemma E_ne_0 {e : ℕ} {ωs f : Fin n → F} : (E ωs f p e) ≠ 0 := by
 
 private lemma errors_are_roots_of_E {i : Fin n} {e} {ωs f : Fin n → F}
   (h : f i ≠ p.eval (ωs i)) : (E ωs f p e).eval (ωs i) = 0  := by
-  unfold E 
   aesop 
     (erase simp [BerlekampWelch.elocPolyF_eq_elocPoly']) 
-    (add simp [BerlekampWelch.errors_are_roots_of_elocPolyF])
+    (add simp [E, BerlekampWelch.errors_are_roots_of_elocPolyF])
 
 @[simp]
 private lemma E_leading_coeff {e} {ωs f : Fin n → F}
@@ -69,20 +68,18 @@ private lemma Q_natDegree
   {e : ℕ} {ωs f : Fin n → F}
   (h : (Δ₀(f, p.eval ∘ ωs) : ℕ) ≤ e) : 
   (Q ωs f p e).natDegree ≤ e + p.natDegree := by
-  unfold Q
   by_cases h0 : p = 0   
-  · aesop
+  · aesop (add simp [Q])
   · aesop 
-      (add simp [ natDegree_mul, E_ne_0, E_natDegree]) 
+      (add simp [Q, natDegree_mul, E_ne_0, E_natDegree]) 
       (add safe (by omega))
 
 private lemma Q_ne_0 
   {e : ℕ} {ωs f : Fin n → F}
   (hne : p ≠ 0)
   : Q ωs f p e ≠ 0 := by
-  unfold Q 
   aesop 
-    (add simp [E_ne_0])
+    (add simp [Q, E_ne_0])
 
 private lemma solution_to_Q_from_Q {e k : ℕ} {ωs f : Fin n → F}
   (h_p_deg : p.natDegree < k)
@@ -95,13 +92,13 @@ private lemma solution_to_Q_from_Q {e k : ℕ} {ωs f : Fin n → F}
   · simp [Fin.liftF]
     omega
   · by_cases hne : p = 0  
-    · simp [hne, Q]
-    · by_cases hq : 0 = (Q ωs f p e).coeff i <;> try simp [hq]
+    · simp [Q, hne]
+    · by_contra hq
       have hdeg := Polynomial.le_degree_of_ne_zero (n := i) (p := Q ωs f p e) (by aesop)
-      have hdeg2 := Q_natDegree h_dist 
-      rw [Polynomial.degree_eq_natDegree (Q_ne_0 hne)] at hdeg 
-      simp at hdeg 
-      omega 
+      aesop 
+        (add safe forward (Q_natDegree h_dist))
+        (add simp [Q_ne_0, Polynomial.degree_eq_natDegree])
+        (add safe (by omega))
   
 private lemma solution_to_E_from_E {e k : ℕ} {ωs f : Fin n → F}
   (h_p_deg : p.natDegree < k)
@@ -110,17 +107,16 @@ private lemma solution_to_E_from_E {e k : ℕ} {ωs f : Fin n → F}
   apply Polynomial.ext 
   intro i 
   simp 
-  split_ifs with hif hif2 <;> try tauto
-  · subst hif 
-    rw [E_leading_coeff' h_dist]
-  · simp [Fin.liftF, hif2]
-    omega
-  · by_cases he : 0 = (E ωs f p e).coeff i <;> try simp [he]
-    have hdeg := Polynomial.le_degree_of_ne_zero (n := i) (p := E ωs f p e) (by aesop)
-    have hdeg2 := E_natDegree h_dist 
-    rw [Polynomial.degree_eq_natDegree E_ne_0] at hdeg 
-    simp at hdeg 
-    omega 
+  split_ifs with hif hif2 <;> 
+    try aesop (config := {warnOnNonterminal := false})  
+              (add simp [Fin.liftF, E_leading_coeff'])
+              (add safe (by omega))
+  by_contra he
+  have hdeg := Polynomial.le_degree_of_ne_zero (n := i) (p := E ωs f p e) (by aesop)
+  aesop 
+    (add safe forward E_natDegree)
+    (add simp [E_ne_0, Polynomial.degree_eq_natDegree])
+    (add safe (by omega))
 
 private lemma E_and_Q_BerlekampWelch_condition {e k : ℕ} {ωs f : Fin n → F}
   (h_p_deg : p.natDegree < k)
