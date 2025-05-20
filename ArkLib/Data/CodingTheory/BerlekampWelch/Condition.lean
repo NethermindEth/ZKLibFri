@@ -43,6 +43,13 @@ def IsBerlekampWelchSolution [NeZero n]
   : Prop 
   := Matrix.mulVec (BerlekampWelchMatrix e k ωs f) v = (Rhs e ωs f)
 
+lemma IsBerlekampWelchSolution_def [NeZero n]
+  {e k : ℕ} 
+  {ωs f : Fin n → F}
+  {v : Fin (2 * e + k) → F}
+  : IsBerlekampWelchSolution e k ωs f v 
+  ↔ Matrix.mulVec (BerlekampWelchMatrix e k ωs f) v = (Rhs e ωs f) := by rfl
+
 lemma linsolve_is_berlekamp_welch_solution [NeZero n]
   {e k : ℕ}
   {ωs f : Fin n → F}

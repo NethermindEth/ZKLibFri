@@ -93,6 +93,44 @@ lemma Q_ne_0
   aesop 
     (add simp [E_ne_0])
 
+lemma solution_to_Q_from_Q {e k : ℕ} {ωs f : Fin n → F}
+  (h_p_deg : p.natDegree < k)
+  (h_dist : (Δ₀(f, p.eval ∘ ωs) : ℕ) ≤ e) 
+  : solution_to_Q e k (E_and_Q_to_a_solution e (E ωs f p e) (Q ωs f p e)) = Q ωs f p e := by
+  apply Polynomial.ext 
+  intro i 
+  simp 
+  split_ifs with hif
+  · simp [Fin.liftF]
+    omega
+  · by_cases hne : p = 0  
+    · simp [hne, Q]
+    · by_cases hq : 0 = (Q ωs f p e).coeff i <;> try simp [hq]
+      have hdeg := Polynomial.le_degree_of_ne_zero (n := i) (p := Q ωs f p e) (by aesop)
+      have hdeg2 := Q_natDegree h_dist 
+      rw [Polynomial.degree_eq_natDegree (Q_ne_0 hne)] at hdeg 
+      simp at hdeg 
+      omega 
+  
+lemma solution_to_E_from_E {e k : ℕ} {ωs f : Fin n → F}
+  (h_p_deg : p.natDegree < k)
+  (h_dist : (Δ₀(f, p.eval ∘ ωs) : ℕ) ≤ e) 
+  : solution_to_E e k (E_and_Q_to_a_solution e (E ωs f p e) (Q ωs f p e)) = E ωs f p e := by
+  apply Polynomial.ext 
+  intro i 
+  simp 
+  split_ifs with hif hif2 <;> try tauto
+  · subst hif 
+    rw [E_leading_coeff' h_dist]
+  · simp [Fin.liftF, hif2]
+    omega
+  · by_cases he : 0 = (E ωs f p e).coeff i <;> try simp [he]
+    have hdeg := Polynomial.le_degree_of_ne_zero (n := i) (p := E ωs f p e) (by aesop)
+    have hdeg2 := E_natDegree h_dist 
+    rw [Polynomial.degree_eq_natDegree E_ne_0] at hdeg 
+    simp at hdeg 
+    omega 
+
 lemma E_and_Q_BerlekampWelch_condition {e k : ℕ} {ωs f : Fin n → F}
   (h_p_deg : p.natDegree < k)
   (h_dist : (Δ₀(f, p.eval ∘ ωs) : ℕ) ≤ e) 
@@ -149,7 +187,12 @@ lemma linsolve_always_some_berlekamp_welch
   · intro contr
     apply linsolve_none contr
     exists E_and_Q_to_a_solution e (E ωs f p e) (Q ωs f p e)
-    rw [BerlekampWelchCondition_to_Solution hk (E_and_Q_BerlekampWelch_condition hp_deg h_ham)]
+    rw [←IsBerlekampWelchSolution_def]
+    simp [
+      BerlekampWelchCondition_iff_Solution,
+      solution_to_Q_from_Q hp_deg h_ham, 
+      solution_to_E_from_E hp_deg h_ham,
+      E_and_Q_BerlekampWelch_condition hp_deg h_ham]
   · simp at hk
     simp [hk] at hp_deg
 

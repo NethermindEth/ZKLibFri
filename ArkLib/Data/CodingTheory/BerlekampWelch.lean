@@ -87,26 +87,11 @@ lemma decoder_some' {e k : ℕ} [NeZero n] {ωs f : Fin n → F} {p : Polynomial
       · aesop 
           (add simp [hammingNorm, hammingDist])
           (add safe (by omega))
-      · have h_div := E'_divides_Q' (e := e) (k := k) (ωs := ωs) (f := f)
-         (Q' := solution_to_Q e k x) (E' := solution_to_E e k x) (p := p) 
-          hk
-          (by omega)
-          (solution_to_E_ne_0)
-          (solution_to_Q_ne_0 hk hlinsolve (by aesop) h_inj)
-          (by simp)
-          (solution_to_Q_natDegree)
-          (h_cond) he hn h_dist h_inj hp
-        apply And.intro h_div 
-        have h_unique := E_and_Q_unique' (e := e) (k := k) (ωs := ωs) (f := f)
-         (Q' := solution_to_Q e k x) (E' := solution_to_E e k x) (p := p) 
-          hk
-          (by omega)
-          (solution_to_E_ne_0)
-          (solution_to_Q_ne_0 hk hlinsolve (by aesop) h_inj)
-          (by simp)
-          (solution_to_Q_natDegree)
-          (h_cond) he hn h_dist h_inj hp
-        aesop (add simp [hammingDist, hammingNorm])
+      · have h := Q'_div_E'_eq_p h_deg he hn h_dist h_inj
+          (solution_to_Q_ne_0 (by aesop) (by 
+            aesop (add simp [BerlekampWelchCondition_iff_Solution])
+          ) h_inj) hp h_cond
+        aesop 
 
 lemma decoder_none {e k : ℕ} [NeZero n] {ωs f : Fin n → F} 
   (he : 2 * e < n - k + 1)
