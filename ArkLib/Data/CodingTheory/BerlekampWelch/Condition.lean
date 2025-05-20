@@ -76,7 +76,7 @@ lemma E_and_Q_to_a_solution_coeff
 
 section 
 
-lemma BerlekampWelchCondition_to_Solution {e k : ℕ} [NeZero n]
+private lemma BerlekampWelchCondition_to_Solution {e k : ℕ} [NeZero n]
   {ωs f : Fin n → F} {E Q : Polynomial F} 
   (hk_or_e : 1 ≤ k ∨ 1 ≤ e)
   (h : BerlekampWelchCondition e k ωs f E Q)
@@ -277,7 +277,7 @@ lemma solution_to_E_and_Q_E_and_Q_to_a_solution
       (add simp [liftF])
       (add safe (by omega))
 
-lemma BerlekampWelchCondition_to_Solution' {e k : ℕ} [NeZero n]
+private lemma BerlekampWelchCondition_to_Solution' {e k : ℕ} [NeZero n]
   {ωs f : Fin n → F} {v : Fin (2 * e + k) → F} 
   (h : BerlekampWelchCondition e k ωs f (solution_to_E e k v) (solution_to_Q e k v))
   : IsBerlekampWelchSolution e k ωs f v := by
@@ -298,7 +298,7 @@ lemma BerlekampWelchCondition_to_Solution' {e k : ℕ} [NeZero n]
     · rw [←solution_to_E_and_Q_E_and_Q_to_a_solution (v := v)]
       exact BerlekampWelchCondition_to_Solution (by omega) h
  
-lemma solution_to_BerlekampWelch_condition₀ {e : ℕ} 
+private lemma solution_to_BerlekampWelch_condition₀ {e : ℕ} 
   [NeZero n] 
   {ωs f : Fin n → F}
   {v : Fin (2 * e + 0) → F}
@@ -403,7 +403,7 @@ lemma solution_to_BerlekampWelch_condition₀ {e : ℕ}
       apply solution_to_Q_natDegree
     }⟩
 
-lemma solution_to_BerlekampWelch_condition {e k : ℕ} 
+private lemma solution_to_BerlekampWelch_condition {e k : ℕ} 
   [NeZero n] 
   {ωs f : Fin n → F}
   {v : Fin (2 * e + k) → F}
@@ -499,6 +499,16 @@ lemma solution_to_BerlekampWelch_condition {e k : ℕ}
   · simp at hk 
     subst hk
     apply solution_to_BerlekampWelch_condition₀ h_sol
+
+theorem BerlekampWelchCondition_iff_Solution {e k : ℕ} [NeZero n]
+  {ωs f : Fin n → F} {v : Fin (2 * e + k) → F} 
+  :
+  IsBerlekampWelchSolution e k ωs f v
+  ↔ 
+  (BerlekampWelchCondition e k ωs f (solution_to_E e k v) (solution_to_Q e k v)) := by
+  apply Iff.intro <;> intro h
+  · exact solution_to_BerlekampWelch_condition h
+  · exact BerlekampWelchCondition_to_Solution' h
 
 lemma linsolve_to_BerlekampWelch_condition {e k : ℕ} 
   [NeZero n] 
