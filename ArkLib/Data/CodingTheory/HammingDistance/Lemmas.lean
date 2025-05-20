@@ -163,4 +163,11 @@ lemma an_implication_of_min_dist {k : ℕ} [Field F] {p : Polynomial F} {ωs : F
     })
     omega
 
+lemma an_implication_of_min_dist' {k : ℕ} [Field F] {p : Polynomial F} {ωs : Fin n → F}
+  (h_deg : p.natDegree < k)
+  (hn : k ≤ n)
+  (h_inj: Function.Injective ωs) 
+  (h_dist : ‖(fun a ↦ Polynomial.eval a p) ∘ ωs‖₀ < n - k + 1)
+  : p = 0 := an_implication_of_min_dist h_deg hn h_inj (by aesop)
+
 end

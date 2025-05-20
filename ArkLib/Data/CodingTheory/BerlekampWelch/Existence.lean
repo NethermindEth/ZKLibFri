@@ -114,7 +114,7 @@ lemma E_and_Q_BerlekampWelch_condition {e k : ℕ} {ωs f : Fin n → F}
     (add safe (by omega))
   ⟩
 
-lemma E'_divides_Q' {e k : ℕ}
+lemma Q'_div_E'_eq_p {e k : ℕ}
   [NeZero n]
   {E' Q' : Polynomial F} 
   {ωs f : Fin n → F}
@@ -137,5 +137,20 @@ lemma E'_divides_Q' {e k : ℕ}
   · simp [Q] at h_eq
     rw [←mul_assoc, mul_comm _ (E _ _ _ _)] at h_eq 
     aesop (add simp E_ne_0)
+
+lemma linsolve_always_some_berlekamp_welch 
+  {e k : ℕ}
+  [NeZero n]
+  {ωs f : Fin n → F}
+  (hp_deg: p.natDegree < k)
+  (h_ham : (Δ₀(f, p.eval ∘ ωs) : ℕ) ≤ e)
+  : linsolve (BerlekampWelchMatrix e k ωs f) (Rhs e ωs f) ≠ none := by
+  by_cases hk : 1 ≤ k
+  · intro contr
+    apply linsolve_none contr
+    exists E_and_Q_to_a_solution e (E ωs f p e) (Q ωs f p e)
+    rw [BerlekampWelchCondition_to_Solution hk (E_and_Q_BerlekampWelch_condition hp_deg h_ham)]
+  · simp at hk
+    simp [hk] at hp_deg
 
 end BerlekampWelch
