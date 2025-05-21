@@ -136,6 +136,11 @@ private lemma E_and_Q_BerlekampWelch_condition {e k : ℕ} {ωs f : Fin n → F}
     (add safe (by omega))
   ⟩
 
+/-- If there has happened up to `e` errors 
+  then any other `E'` and `Q'` satifying Berlekamp-Welch
+  condition will result in the same quotient 
+  `Q' \ E' = p`.
+-/
 lemma Q'_div_E'_eq_p {e k : ℕ}
   [NeZero n]
   {E' Q' : Polynomial F} 
@@ -156,6 +161,7 @@ lemma Q'_div_E'_eq_p {e k : ℕ}
   rw [←mul_assoc, mul_comm _ (E _ _ _ _)] at h_eq 
   aesop (add simp E_ne_0)
 
+/-- If only up to `e` errors happened `linsolve` cannot fail to find a solution. -/
 lemma linsolve_always_some_berlekamp_welch 
   {e k : ℕ}
   [NeZero n]
