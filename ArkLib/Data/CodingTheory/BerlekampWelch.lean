@@ -3,24 +3,14 @@ Copyright (c) 2024-2025 ArkLib Contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: František Silváši, Ilia Vlasov
 -/
-import Init.Data.List.FinRange
 import Mathlib.Algebra.Field.Basic
 import Mathlib.Algebra.Polynomial.Basic
-import Mathlib.Algebra.Polynomial.Degree.Definitions
-import Mathlib.Algebra.Polynomial.FieldDivision
-import Mathlib.Data.Finset.Insert
-import Mathlib.Data.Fintype.Card
-import Mathlib.Data.Matrix.Mul 
-import Mathlib.Data.Matrix.Reflection
 
 import ArkLib.Data.CodingTheory.Basic
 import ArkLib.Data.CodingTheory.BerlekampWelch.Condition
-import ArkLib.Data.CodingTheory.BerlekampWelch.ElocPoly
 import ArkLib.Data.CodingTheory.BerlekampWelch.Existence
 import ArkLib.Data.CodingTheory.BerlekampWelch.Sorries
-import ArkLib.Data.CodingTheory.BerlekampWelch.ToMathlib
 import ArkLib.Data.CodingTheory.HammingDistance.Lemmas
-import ArkLib.Data.Fin.Basic
 
 /-!
   # Berlekamp-Welch decoder algorithm for Reed-Solomon codes.
