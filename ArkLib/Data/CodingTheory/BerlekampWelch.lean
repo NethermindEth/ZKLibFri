@@ -30,7 +30,7 @@ section
 variable [DecidableEq F]
 
 noncomputable def decoder (e k : ℕ) [NeZero n] (ωs f : Fin n → F) : Option (Polynomial F) :=
-  if Δ₀(f, 0) ≤ e 
+  if ‖f‖₀ ≤ e
   then some 0 
   else 
     let x := linsolve (BerlekampWelchMatrix e k ωs f) (Rhs e ωs f)
@@ -48,59 +48,45 @@ noncomputable def decoder (e k : ℕ) [NeZero n] (ωs f : Fin n → F) : Option 
       else
         none
 
-lemma decoder_some [NeZero n] {ωs f : Fin n → F} 
-  (h : decoder e k ωs f = some p) 
-  : Δ₀(f, p.eval ∘ ωs) ≤ e := by
-  simp only [decoder] at h
-  split_ifs at h with hif
-  · aesop 
-  · generalize h_linsolve:
-     linsolve (BerlekampWelchMatrix e k ωs f) (Rhs e ωs f) = solution 
-    rcases solution with _ | solution <;> simp [h_linsolve] at h
-    aesop 
-      (add safe forward (linsolve_to_BerlekampWelch_condition h_linsolve))
+lemma hammingDist_le_of_decoder_eq_some [NeZero n] {ωs f : Fin n → F} 
+  (h : decoder e k ωs f = some p) : Δ₀(f, p.eval ∘ ωs) ≤ e :=
+  by aesop (add simp decoder)
 
-lemma decoder_some' {e k : ℕ} [NeZero n] {ωs f : Fin n → F} {p : Polynomial F}
+lemma decoder_eq_some {e k : ℕ} [NeZero n] {ωs f : Fin n → F} {p : Polynomial F}
   (he : 2 * e < n - k + 1)
   (hn : k ≤ n)
   (h_inj : Function.Injective ωs)
   (h_deg : p.natDegree < k)
-  (h_dist : Δ₀(f, (fun a => Polynomial.eval a p) ∘ ωs) ≤ e) 
+  (h_dist : Δ₀(f, p.eval ∘ ωs) ≤ e) 
   : decoder e k ωs f = some p := by 
   simp only [decoder]
   split_ifs with hif
-  · have h_dist : Δ₀((fun a ↦ eval a p) ∘ ωs, (0 : Fin n → F)) ≤ 2 * e
-      := Nat.le_trans (hammingDist_triangle _ _ (y := f)) (by {
-        rw [hammingDist_comm]
+  · suffices p = 0 from Option.some_inj.2 this.symm
+    refine an_implication_of_min_dist h_deg hn h_inj (lt_of_le_of_lt ?p₁ he)
+    transitivity ‖f‖₀ + Δ₀(f, p.eval ∘ ωs)
+    · convert hammingDist_triangle 0 f (p.eval ∘ ωs) using 1 <;> simp
+    · omega
+  · rcases hlinsolve : linsolve (BerlekampWelchMatrix e k ωs f) (Rhs e ωs f)
+    · simp only [reduceCtorEq]; exact linsolve_always_some_berlekamp_welch h_deg h_dist hlinsolve
+    · by_cases hp : p = 0 
+      · have : ‖f‖₀ ≤ e := by aesop
         omega
-      })
-    rw [an_implication_of_min_dist (p := p)]
-      <;> aesop (add safe (by omega))
-  · generalize hlinsolve 
-      : linsolve (BerlekampWelchMatrix e k ωs f) (Rhs e ωs f) = solution 
-    rcases solution with _ | x <;> simp 
-    · apply linsolve_always_some_berlekamp_welch (n := n) (p := p) <;>
-        aesop (add safe (by omega))
-    · simp at hif
-      have h_cond := linsolve_to_BerlekampWelch_condition hlinsolve
-      by_cases hp : p = 0 
-      · aesop 
-          (add simp [hammingNorm, hammingDist])
-          (add safe (by omega))
-      · have h := Q'_div_E'_eq_p h_deg he hn h_dist h_inj
-          (solution_to_Q_ne_0 (by aesop) (by 
-            aesop (add simp [BerlekampWelchCondition_iff_Solution])
-          ) h_inj) hp h_cond
-        aesop 
+      · have h_cond := linsolve_to_BerlekampWelch_condition hlinsolve
+        have h :=
+          Q'_div_E'_eq_p
+            h_deg he hn h_dist h_inj
+            (solution_to_Q_ne_0 (not_le.1 hif)
+                                (BerlekampWelchCondition_iff_Solution.2 h_cond) h_inj) hp h_cond
+        simp_all
 
-lemma decoder_none {e k : ℕ} [NeZero n] {ωs f : Fin n → F} 
+lemma not_exists_of_decoder_eq_none {e k : ℕ} [NeZero n] {ωs f : Fin n → F}
   (he : 2 * e < n - k + 1)
   (hn : k ≤ n)
   (h_inj : Function.Injective ωs)
   (h_none : decoder e k ωs f = none)
-  : ¬∃p, Δ₀(f, (fun a => Polynomial.eval a p) ∘ ωs) ≤ e ∧ p.natDegree < k := by 
-  intro contr 
-  aesop (add safe forward (decoder_some'))
+  : ¬∃p : F[X], Δ₀(f, p.eval ∘ ωs) ≤ e ∧ p.natDegree < k := by 
+  intro contr
+  aesop (add safe forward (decoder_eq_some))
 
 end
 
