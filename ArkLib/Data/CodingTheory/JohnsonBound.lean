@@ -21,19 +21,19 @@ noncomputable def J (q : ℕ) (δ : ℚ) : ℝ :=
   (1 - 1/q) * (1 - √(1 - q * δ / (q - 1))) 
 
 lemma under_jonhson_bound_iff_le_bound {q : ℕ} {ρ δ : ℚ} :
-  UnderJohnsonBound q ρ δ ↔ ρ < J q δ := by 
-  unfold J
-  apply Iff.intro
-  · rintro ⟨δ_0, δ_u, q_2, ρ_pos, johnson⟩
-    have h_q : ((1 - 1/q):ℝ) = (q - 1)/q := by
-      field_simp
-    rw [h_q]
-    suffices h : (q * ρ/(q-1)) < (1 - √(1 - ↑q * ↑δ / (↑q - 1))) by {
-      sorry
-    }
+  UnderJohnsonBound q ρ δ ↔ 0 ≤ δ ∧ δ ≤ 1 - 1/q ∧ 2 ≤ q ∧ 0 ≤ 1 - q/(q-1) * ρ ∧ ρ < J q δ := by 
+  /- unfold J -/
+  /- apply Iff.intro -/
+  /- · rintro ⟨δ_0, δ_u, q_2, ρ_pos, johnson⟩ -/
+  /-   have h_q : ((1 - 1/q):ℝ) = (q - 1)/q := by -/
+  /-     field_simp -/
+  /-   rw [h_q] -/
+  /-   suffices h : (q * ρ/(q-1)) < (1 - √(1 - ↑q * ↑δ / (↑q - 1))) by { -/
+  /-     so -/
+  /-   } -/
+  sorry
 
     
-    rw [
 
 end JohnsonBound
 
