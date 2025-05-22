@@ -6,6 +6,7 @@ import ArkLib.CommitmentScheme.SimpleRO
 import ArkLib.CommitmentScheme.Tensor
 import ArkLib.CommitmentScheme.Trivial
 import ArkLib.Data.CodingTheory.Basic
+import ArkLib.Data.CodingTheory.JohnsonBound
 import ArkLib.Data.CodingTheory.ProximityGap
 import ArkLib.Data.CodingTheory.ReedMuller
 import ArkLib.Data.CodingTheory.ReedSolomon
