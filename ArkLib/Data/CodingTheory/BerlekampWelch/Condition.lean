@@ -129,13 +129,6 @@ lemma truncate_natDegree
 
 section 
 
-def replicateM {α : Type*} {m} [Monad m] : ℕ → m α → m (List α)
-| 0, _ => pure []
-| n + 1, m => do
-  let a ← m
-  let as ← replicateM n m
-  pure (a::as)
-
 private lemma BerlekampWelchCondition_to_Solution' {e k : ℕ} [NeZero n]
   {ωs f : Fin n → F} {E Q : Polynomial F} 
   (hk_or_e : 1 ≤ k ∨ 1 ≤ e)
@@ -159,6 +152,51 @@ private lemma BerlekampWelchCondition_to_Solution' {e k : ℕ} [NeZero n]
                                    (by rw [Finset.mul_sum]
                                        exact Finset.sum_congr rfl fun _ _ ↦ by rw [bwm_of_pos (by aesop)]; ac_rfl)
                                    (Finset.sum_congr (by aesop) fun j hj ↦ by rw [bwm_of_neg (by aesop)])
+  replace eq₁ : Polynomial.eval (ωs i) E - ωs i ^ e * E.coeff e = σ₁ := calc
+                _ = ∑ i_1 ∈ Finset.range (e + 1), E.coeff i_1 * ωs i ^ i_1 - ωs i ^ e * E.coeff e := by rw [Polynomial.eval_eq_sum_range, h_E_deg]
+                _ = ∑ x ∈ Finset.range e, E.coeff x * ωs i ^ x := by rw [Finset.sum_range_succ]; ring
+                _ = σ₁ := by rw [←eq₁]; symm
+                             apply Finset.sum_nbij (i := Fin.val) <;>
+                               try intros a _; aesop (add safe (by existsi ⟨a, by omega⟩))
+                                                     (add simp Set.InjOn)
+  replace eq₂ : -Polynomial.eval (ωs i) Q = σ₂ := by
+    rw [←eq₂]
+    rw [Polynomial.eval_eq_sum]
+    rw [Polynomial.sum_eq_of_subset (s := rightσ.map ⟨Fin.val, Fin.val_injective⟩)]
+    simp
+    
+    rotate_left 2
+    intros a b
+    simp at b
+    simp [rightσ, leftσ]
+    rw [←Polynomial.ite_le_natDegree_coeff _ _ inferInstance ] at b
+    simp at b
+    use ⟨a, sorry⟩
+    simp
+    rw [Nat.lt_one_add_iff] at b
+    
+    
+    
+    transitivity 1 + (e + k - 1)
+    omega
+    have : a ≤ e + k - 1 := by omega
+    
+
+
+    rw [Polynomial.eval_eq_sum_range, Finset.sum_range_succ]
+    simp only [neg_add_rev, mul_neg, Finset.sum_neg_distrib]
+    rw [←Polynomial.sum_eq_of_subset]
+    
+    
+    -- rw [Polynomial.sum_def]
+    -- simp [rightσ, leftσ]
+    
+    
+
+    done
+  
+  -- #exit
+
   replace eq₁ : Polynomial.eval (ωs i) E - ωs i ^ e * E.coeff e = σ₁ := by
     rw [Polynomial.eval_eq_sum_range]
     rw [←eq₁]
