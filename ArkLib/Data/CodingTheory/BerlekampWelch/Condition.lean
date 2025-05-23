@@ -160,22 +160,15 @@ private lemma BerlekampWelchCondition_to_Solution' {e k : ℕ} [NeZero n]
                                        exact Finset.sum_congr rfl fun _ _ ↦ by rw [bwm_of_pos (by aesop)]; ac_rfl)
                                    (Finset.sum_congr (by aesop) fun j hj ↦ by rw [bwm_of_neg (by aesop)])
   replace eq₁ : σ₁ = Polynomial.eval (ωs i) E - ωs i ^ e * E.coeff e := by
-    rw [←eq₁]
     rw [Polynomial.eval_eq_sum_range]
+    rw [←eq₁]
     rw [h_E_deg]
     rw [Finset.sum_range_succ]
     rw [add_sub_assoc]
     rw [mul_comm]
     simp [leftσ]
-    apply Finset.sum_nbij (i := Fin.val)
-                          (by simp)
-                          (by aesop (add simp Set.InjOn))
-                          (fun a _ ↦ by aesop (add safe (by existsi ⟨a, by omega⟩)))
-                          (by simp)
-
-
-
-
+    apply Finset.sum_nbij (i := Fin.val) <;>
+      try intros a _; aesop (add safe (by existsi ⟨a, by omega⟩)) (add simp Set.InjOn)
   
       --  _ = _ := _
     
