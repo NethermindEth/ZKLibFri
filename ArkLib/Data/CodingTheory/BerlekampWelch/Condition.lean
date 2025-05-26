@@ -192,6 +192,12 @@ open Polynomial
 
 variable [DecidableEq F]
 
+/-
+  TODO(Ferinko): Use `polynomialOfCoeffs` after merge.
+
+  This should subsume most if not all `solution_` lemmas.
+-/
+
 def solution_to_E (e k : ℕ) (v : Fin (2 * e + k) → F) : Polynomial F :=
   ⟨⟨insert e ((Finset.range e).filter (fun x => liftF v x ≠ 0)), 
     fun i => if i = e then 1 else if i < e then liftF v i else 0, by 
