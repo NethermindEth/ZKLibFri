@@ -20,40 +20,41 @@ import Mathlib.Algebra.Module.Submodule.Defs
 open Classical
 open Finset
 
-noncomputable def wt {F : Type*} [Semiring F] [Zero F] {ι : ℕ}
-  (v : Fin ι → F) : ℕ := #{i | v i ≠ 0}
+noncomputable def wt {F : Type*} [Semiring F] [Zero F] {ι : Type*} [Fintype ι]
+  (v : ι → F) : ℕ := #{i | v i ≠ 0}
 
 namespace LinearCodes
 
 noncomputable section
 
-variable {ι : ℕ}
-         {F : Type*} [Semiring F]
+variable {F : Type*} [Semiring F]
+         {ι : Type*} [Fintype ι]
 
-abbrev LinearCode.{u} (ι : ℕ) (F : Type u) [Semiring F] : Type u := Submodule F (Fin ι → F)
+abbrev LinearCode.{u, v} (ι : Type u) [Fintype ι] (F : Type v) [Semiring F] : Type (max u v) :=
+  Submodule F (ι → F)
 
 def minDist (LC : LinearCode ι F) : ℕ :=
   sInf { d | ∃ u ∈ LC, ∃ v ∈ LC, u ≠ v ∧ hammingDist u v = d }
+
 end
 
 noncomputable section
 
-variable {ι κ : ℕ}
+variable {ι : Type*} [Fintype ι]
+         {κ  : Type*} [Fintype κ]
          {F : Type*} [CommRing F]
 
 /--
 A linear code of length `ι` defined by right multiplication by a `κ x ι` generator matrix `G`.
 -/
-def mul_GenMat (G : Matrix (Fin κ) (Fin ι) F) : LinearCode ι F :=
+def mul_GenMat (G : Matrix κ ι F) : LinearCode ι F :=
   LinearMap.range G.vecMulLinear
 
 /--
 A linear code of length `ι` defined by left multiplication by a `ι x κ` generator matrix `G`.
 -/
-
-def genMat_mul (G : Matrix (Fin ι) (Fin κ) F) : Submodule F (Fin ι → F) :=
+def genMat_mul (G : Matrix ι κ F) : Submodule F (ι → F) :=
   LinearMap.range G.mulVecLin
-
 
 def dim (LC : LinearCode ι F) : ℕ :=
   Module.finrank F LC
@@ -61,11 +62,10 @@ def dim (LC : LinearCode ι F) : ℕ :=
 /--
 The dimension of a linear code equals the rank of its associated generator matrix.
 -/
-lemma dimEqRankGenMat {G : Matrix (Fin κ) (Fin ι) F} :
-  G.rank = dim (genMat_mul G) := by
-  rw[Matrix.rank, dim, genMat_mul]
+lemma dimEqRankGenMat {G : Matrix κ ι F} :
+  G.rank = dim (genMat_mul G) := rfl
 
-def length (LC : LinearCode ι F) := Fintype.card (Fin ι)
+def length (LC : LinearCode ι F) := Fintype.card ι
 
 def rate (LC : LinearCode ι F) : ℚ :=
   (dim LC : ℚ) / (length LC : ℚ)
@@ -78,7 +78,7 @@ notation "ρ" LC => rate LC
 def minWtCodewords (LC : LinearCode ι F) : ℕ :=
   sInf {w | ∃ c ∈ LC, c ≠ 0 ∧ wt c = w}
 
-lemma hammingDist_eq_wt_sub {u v : Fin ι → F} : hammingDist u v = wt (u - v) := by
+lemma hammingDist_eq_wt_sub {u v : ι → F} : hammingDist u v = wt (u - v) := by
   aesop (add simp [hammingDist, wt, sub_eq_zero])
 
 /--
