@@ -151,8 +151,7 @@ private lemma BerlekampWelchCondition_to_Solution {e k : ℕ} [NeZero n]
         rw [sum_ite]
         exact eq ▸ eq₁ ▸ eq₂ ▸
           congr_arg₂ _
-            (by rw [mul_sum]
-                exact sum_congr rfl fun _ _ ↦ by rw [bwm_of_pos (by aesop)]; ac_rfl)
+            (by rw [mul_sum]; exact sum_congr rfl fun _ _ ↦ by rw [bwm_of_pos (by aesop)]; ac_rfl)
             (sum_congr (by aesop) fun j hj ↦ by rw [bwm_of_neg (by aesop)])
   replace eq₁ : eval (ωs i) E - ωs i ^ e * E.coeff e = σ₁ := calc
                 _ = ∑ i_1 ∈ range (e + 1), E.coeff i_1 * ωs i ^ i_1 - ωs i ^ e * E.coeff e :=
@@ -169,10 +168,7 @@ private lemma BerlekampWelchCondition_to_Solution {e k : ℕ} [NeZero n]
                   rw [
                     eval_eq_sum, neg_inj,
                     sum_eq_of_subset (s := δσ) _ (by simp) fun _ hj ↦
-                      by rw [
-                           mem_support_iff,
-                           ←ite_le_natDegree_coeff _ _ inferInstance
-                         ] at hj
+                      by rw [mem_support_iff,←ite_le_natDegree_coeff _ _ inferInstance] at hj
                          aesop (add safe (by omega)),
                     ←sum_attach
                   ]
