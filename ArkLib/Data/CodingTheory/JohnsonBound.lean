@@ -7,6 +7,7 @@ import Mathlib.Analysis.Convex.Function
 import Mathlib.Data.Real.Sqrt
 
 import ArkLib.Data.CodingTheory.Basic
+import ArkLib.Data.Fin.Basic
 
 namespace JohnsonBound
 
@@ -188,7 +189,9 @@ lemma push_lt_one_to_top {n : ℕ} {α : ℕ → ℚ}
   (h_2_le : 1 ≤ n)
   (h_nonneg : ∀ i : Fin n.succ, 0 ≤ α i)
   (h_sum : ∑ (i : Fin n.succ), α i = 1)
-  : ∃ f : Fin n.succ → Fin n.succ, Function.Bijective f ∧ α (f (Fin.last n)) < 1 := by
+  : ∃ f : Fin n.succ → Fin n.succ, 
+    Function.Bijective f 
+      ∧ α (f (Fin.last n)) < 1 := by
   have h_exists := lt_one_of_sum_one (n := n.succ) (by omega) h_nonneg h_sum
   rcases h_exists with ⟨i₀, hi⟩
   let f := fun i => 
@@ -210,6 +213,88 @@ lemma push_lt_one_to_top {n : ℕ} {α : ℕ → ℚ}
           aesop (add simp [f])
   · aesop
 
+lemma reindex_sums  {n : ℕ} {α x : ℕ → ℚ} 
+  {ϕ : ℚ → ℚ}
+  (h_le : 1 ≤ n) 
+  (h_nonneg : ∀ (i : Fin n.succ), 0 ≤ α i)
+  (h_sum : ∑ (i : Fin n.succ), α i = 1)
+  : ∃ (α' x' : ℕ → ℚ),
+    ∑ (i : Fin n.succ), α i * x i = ∑ (i : Fin n.succ), α' i * x' i
+    ∧ ∑ (i : Fin n.succ), α i * ϕ (x i) = ∑ (i : Fin n.succ), α' i * ϕ (x' i)
+    ∧ α' (Fin.last n) < 1 
+    ∧ ∀ (i : Fin n.succ), 0 ≤ α' i 
+    ∧ ∑ (i : Fin n.succ), α' i = 1 := by
+
+  have h_bij := push_lt_one_to_top 
+        (n := n)
+        (by omega)
+        h_nonneg
+        h_sum
+  rcases h_bij with ⟨f, ⟨h_bij, f_last⟩⟩
+  have h_f_has_inverse : ∃ finv, Function.LeftInverse finv f 
+    ∧ Function.RightInverse finv f := by 
+    rw [Function.bijective_iff_has_inverse] at h_bij 
+    aesop 
+  rcases h_f_has_inverse with ⟨finv, h_finv⟩ 
+  have h_finv_bij : Function.Bijective finv := by
+    rw [Function.bijective_iff_has_inverse]   
+    exists f 
+    aesop
+  exists (fun i => α (f i)) 
+  exists (fun i => x (f i))
+  apply And.intro
+  · rw [Finset.sum_bijective 
+        (t := Finset.univ)
+        (e := finv) 
+        (g := fun i ↦ let j := f i
+            α ↑j * (x ↑j))  
+        h_finv_bij
+        (by simp)
+        (by 
+          aesop (add simp [Function.LeftInverse, Function.RightInverse])
+        )]
+    simp 
+  · apply And.intro 
+    · rw [Finset.sum_bijective 
+        (t := Finset.univ)
+        (e := finv) 
+        (g := fun i ↦ let j := f i
+            α ↑j * ϕ (x ↑j))  
+        h_finv_bij
+        (by simp)
+        (by 
+          aesop (add simp [Function.LeftInverse, Function.RightInverse])
+        )]
+      simp 
+    · simp only [Nat.succ_eq_add_one, Fin.val_last, Fin.natCast_eq_last, f_last,
+      Fin.cast_val_eq_self, true_and]
+      rw [Finset.sum_bijective 
+        (t := Finset.univ)
+        (e := f) 
+        (g := fun (i : Fin n.succ) ↦ 
+            α i)  
+        h_bij
+        (by simp)
+        (by 
+          aesop (add simp [Function.LeftInverse, Function.RightInverse])
+        )]
+      aesop
+
+lemma inductive_step {n : ℕ} {α x : ℕ → ℚ} 
+  {ϕ : ℚ → ℚ}
+  (h_nonneg : ∀ (i : Fin n.succ), 0 ≤ α i)
+  (h_sum : ∑ (i : Fin n.succ), α i = 1)
+  (h_last : α (Fin.last n) < 1)
+  : ∃ (α' x' : ℕ → ℚ),
+    ∑ (i : Fin n.succ), α i * x i 
+      = α' (Fin.last n) * x' (Fin.last n) 
+          + (1 - α' (Fin.last n)) * ∑ (i : Fin n), α' i * x' i
+    ∧ ∑ (i : Fin n.succ), α i * ϕ (x i) = α' (Fin.last n) * x' (Fin.last n) 
+          + (1 - α' (Fin.last n)) * ∑ (i : Fin n), α' i * ϕ (x' i)
+    ∧ ∀ (i : Fin n), 0 ≤ α' i 
+    ∧ ∑ (i : Fin n), α' i = 1 := by
+
+
 theorem jensen_inequalityF {n : ℕ} {α x : ℕ → ℚ} 
   {ϕ : ℚ → ℚ}
   (h_nonneg : ∀ (i : Fin n), 0 ≤ α i)
@@ -230,36 +315,74 @@ theorem jensen_inequalityF {n : ℕ} {α x : ℕ → ℚ}
         h_nonneg
         h_sum
       rcases h_bij with ⟨f, ⟨h_bij, f_last⟩⟩
-      have h_f_has_inverse : ∃ finv, Function.LeftInverse finv f := by 
+      have h_f_has_inverse : ∃ finv, Function.LeftInverse finv f 
+        ∧ Function.RightInverse finv f := by 
         rw [Function.bijective_iff_has_inverse] at h_bij 
         aesop 
       rcases h_f_has_inverse with ⟨finv, h_finv⟩ 
+      have h_finv_bij : Function.Bijective finv := by
+        rw [Function.bijective_iff_has_inverse]   
+        exists f 
+        aesop
+
       rw [Finset.sum_bijective 
         (t := Finset.univ)
-        (e := f) 
-        (g := fun i ↦ let j := finv i
+        (e := finv) 
+        (g := fun i ↦ let j := f i
             α ↑j * (x ↑j))  
-        h_bij
+        h_finv_bij
         (by simp)
         (by 
-          aesop (add simp [Function.LeftInverse])
+          aesop (add simp [Function.LeftInverse, Function.RightInverse])
         )]
       conv =>
         rhs
         rw [
           Finset.sum_bijective 
             (t := Finset.univ)
-            (e := f) 
-            (g := fun i ↦ let j := finv i
+            (e := finv) 
+            (g := fun i ↦ let j := f i
                 α ↑j * ϕ (x ↑j))  
-            h_bij
+            h_finv_bij
             (by simp)
             (by 
-              aesop (add simp [Function.LeftInverse])
+              aesop (add simp [Function.LeftInverse, Function.RightInverse])
             ),
         ]
         rfl
       simp 
+      have h_new : ∀ x_1 : Fin (n + 1 + 1), finv x_1 = (Fin.liftF finv) ↑x_1 := by simp [Fin.liftF]
+      rw [Finset.sum_fin_eq_sum_range, Finset.sum_fin_eq_sum_range]
+      rw [Finset.range_succ, Finset.sum_insert (by aesop),  Finset.sum_insert (by aesop)]
+      split_ifs with h <;> try omega
+      have h_last : Fin.last (n + 1) = ⟨n + 1, h⟩ := by
+        apply Fin.ext
+        simp
+      rw [←h_last]
+      rw [Finset.sum_range, Finset.sum_range]
+      rw [Finset.sum_dite_of_true (by {
+        rintro ⟨i, h_fin⟩ _ 
+        omega
+      }), Finset.sum_dite_of_true (by {
+        rintro ⟨i, h_fin⟩ _ 
+        omega
+      })]
+      have h_a : 0 < 1 - α ↑(f (Fin.last n.succ)) := by linarith
+      conv => 
+        lhs 
+        congr 
+        congr 
+        rfl 
+        rw [←one_mul (Finset.sum _ _)]
+        rw [←Field.mul_inv_cancel (1 - α ↑(f (Fin.last n.succ))) (by linarith)] 
+        rw [mul_assoc, Finset.mul_sum]
+
+
+
+
+      simp
+      
+      
       
 
 
