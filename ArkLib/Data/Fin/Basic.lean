@@ -103,4 +103,3 @@ lemma eval_liftF_of_lt {f : Fin m → F} (h : n < m) :
   aesop (add simp liftF)
 
 end Fin
-

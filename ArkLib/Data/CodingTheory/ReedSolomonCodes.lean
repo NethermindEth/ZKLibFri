@@ -36,9 +36,9 @@ def nonsquareTranspose [Field F] (deg : ℕ) (α : ι ↪ F) : Matrix (Fin deg) 
 /--
 The maximal upper square submatrix of a Vandermonde matrix is a Vandermonde matrix.
 -/
-lemma subUpFull_of_vandermonde_is_vandermonde {ι : ℕ} [CommRing F] {deg : ℕ} {α : Fin ι ↪ F}
-  (h : deg ≤ ι) :
-  Matrix.vandermonde (Embedding.restrictionToFun deg α h) =
+lemma subUpFull_of_vandermonde_is_vandermonde [FinEnum ι] [CommRing F] {deg : ℕ} {α : ι ↪ F}
+  (h : deg ≤ FinEnum.card ι) :
+  Matrix.vandermonde (FinEnum.fnOfFinFun deg h α) =
   Matrix.subUpFull (nonsquare deg α) h := by
   unfold Matrix.subUpFull nonsquare Matrix.vandermonde
   aesop
@@ -80,14 +80,15 @@ lemma rank_nonsquare_eq_deg_of_ι_le {ι : ℕ} [CommRing F] [IsDomain F] {deg :
   exact α.injective
 
 @[simp]
-lemma rank_nonsquare_rows_eq_min [Fintype ι] [CommRing F] [IsDomain F] {deg : ℕ} {α : ι ↪ F} :
+lemma rank_nonsquare_rows_eq_min [FinEnum ι] [CommRing F] [IsDomain F] {deg : ℕ} {α : ι ↪ F} :
   (Vandermonde.nonsquare deg α).rank = min (Fintype.card ι) deg := by
   by_cases h : Fintype.card ι ≤ deg <;>
   aesop (add simp [rank_nonsquare_eq_deg_of_ι_le, rank_nonsquare_eq_deg_of_deg_le])
         (add safe forward le_of_lt)  
 
 theorem mulVecLin_coeff_vandermondens_eq_eval_matrixOfPolynomials
-  {deg : ℕ} [NeZero deg] [CommRing F] {v : ι ↪ F} {p : F[X]} (h_deg : p.natDegree < deg) :
+  {deg : ℕ} [NeZero deg] [CommRing F] {v : ι ↪ F} {p : F[X]}
+  (h_deg : p.natDegree < deg) :
   (Vandermonde.nonsquare deg v).mulVecLin (p.coeff ∘ Fin.val) = -- NOTE: Use `liftF`.
   fun i => p.eval (v i) := by
   ext i
