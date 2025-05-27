@@ -85,12 +85,6 @@ def subUpFull {m : Type*} [FinEnum m]
               {n : Type*} [FinEnum n]
               (U : Matrix m n F) (h_col : FinEnum.card n ≤ FinEnum.card m) :
   Matrix n n F := Matrix.submatrix U (FinEnum.fnOfFinFun _ h_col id ∘ FinEnum.equiv) id
-  -- FinEnum.fnOfFinFun _ _ _
-  -- fun k ↦
-  --   let ⟨σᵢ, hσᵢ⟩ := FinEnum.equiv.toFun k
-  --   let σ := FinEnum.toList m
-  --   have : σᵢ < σ.length := by aesop (add safe apply lt_of_lt_of_le)
-  --   σ.get ⟨σᵢ, this⟩
                     
 lemma full_col_rank_via_rank_subUpFull {m : Type*} [FinEnum m] {n : Type*} [FinEnum n] [CommRing F]
   {U : Matrix m n F} (h_col : FinEnum.card n ≤ FinEnum.card m) :
