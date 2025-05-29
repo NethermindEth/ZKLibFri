@@ -4,6 +4,7 @@ import ArkLib.Data.CodingTheory.InterleavedCodes
 import ArkLib.Data.CodingTheory.LinearCodes
 import ArkLib.Data.CodingTheory.ProximityGap
 import ArkLib.Data.CodingTheory.Prelims
+import ArkLib.Data.CodingTheory.PolishchukSpielman
 import ArkLib.Data.CodingTheory.ReedMuller
 import ArkLib.Data.CodingTheory.ReedSolomon
 import ArkLib.Data.CodingTheory.ReedSolomonCodes
