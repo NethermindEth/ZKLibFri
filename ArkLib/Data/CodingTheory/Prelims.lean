@@ -84,8 +84,9 @@ lemma full_rank_iff_det_ne_zero [CommRing F] {n : ℕ} {U : Matrix (Fin n) (Fin 
 def subUpFull {m : Type*} [FinEnum m]
               {n : Type*} [FinEnum n]
               (U : Matrix m n F) (h_col : FinEnum.card n ≤ FinEnum.card m) :
-  Matrix n n F := Matrix.submatrix U (FinEnum.fnOfFinFun _ h_col id ∘ FinEnum.equiv) id
-                    
+  Matrix n n F :=
+    U.submatrix (FinEnum.equiv.invFun ∘ Fin.castLE h_col ∘ FinEnum.equiv) id
+
 lemma full_col_rank_via_rank_subUpFull {m : Type*} [FinEnum m] {n : Type*} [FinEnum n] [CommRing F]
   {U : Matrix m n F} (h_col : FinEnum.card n ≤ FinEnum.card m) :
   U.rank = Fintype.card n ↔ (subUpFull U h_col).rank = Fintype.card n := by sorry
