@@ -5,7 +5,6 @@ Authors: Katerina Hristova, František Silváši, Julian Sutherland
 -/
 
 import Mathlib.Algebra.Lie.OfAssociative
-import Mathlib.Data.FinEnum
 import Mathlib.Data.Matrix.Rank
 import Mathlib.LinearAlgebra.AffineSpace.AffineSubspace.Defs
 

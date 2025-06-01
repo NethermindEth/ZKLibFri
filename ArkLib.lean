@@ -5,23 +5,8 @@ import ArkLib.CommitmentScheme.MerkleTree
 import ArkLib.CommitmentScheme.SimpleRO
 import ArkLib.CommitmentScheme.Tensor
 import ArkLib.CommitmentScheme.Trivial
-import ArkLib.Data.CodingTheory.BerlekampWelch.Condition
-import ArkLib.Data.CodingTheory.BerlekampWelch.ElocPoly
-import ArkLib.Data.CodingTheory.BerlekampWelch.Existence
-import ArkLib.Data.CodingTheory.BerlekampWelch.Sorries
-import ArkLib.Data.CodingTheory.BerlekampWelch.ToMathlib
-import ArkLib.Data.CodingTheory.HammingDistance.Lemmas
-import ArkLib.Data.CodingTheory.Basic
-import ArkLib.Data.CodingTheory.BerlekampWelch
-import ArkLib.Data.CodingTheory.DivergenceOfSets
-import ArkLib.Data.CodingTheory.InterleavedCodes
-import ArkLib.Data.CodingTheory.LinearCode
-import ArkLib.Data.CodingTheory.Prelims
-import ArkLib.Data.CodingTheory.ProximityGap
-import ArkLib.Data.CodingTheory.ReedMuller
-import ArkLib.Data.CodingTheory.ReedSolomon
-import ArkLib.Data.CodingTheory.ReedSolomonCodes
-import ArkLib.Data.CodingTheory.RelativeHammingDistance
+import ArkLib.Data.CodingTheory
+import ArkLib.Data.CodingTheory.HammingDistance.Lemmas -- Temporary.
 import ArkLib.Data.EllipticCurve.BN254
 import ArkLib.Data.FieldTheory.BinaryTowerField.Basic
 import ArkLib.Data.FieldTheory.BinaryTowerField.Prelude

@@ -1,11 +1,8 @@
 import ArkLib.Data.CodingTheory.Basic
+import ArkLib.Data.CodingTheory.BerlekampWelch
 import ArkLib.Data.CodingTheory.DivergenceOfSets
 import ArkLib.Data.CodingTheory.InterleavedCodes
-import ArkLib.Data.CodingTheory.LinearCode
-import ArkLib.Data.CodingTheory.ListDecodability
-import ArkLib.Data.CodingTheory.ProximityGap
 import ArkLib.Data.CodingTheory.Prelims
+import ArkLib.Data.CodingTheory.ProximityGap
 import ArkLib.Data.CodingTheory.ReedMuller
 import ArkLib.Data.CodingTheory.ReedSolomon
-import ArkLib.Data.CodingTheory.ReedSolomonCodes
-import ArkLib.Data.CodingTheory.RelativeHammingDistance
