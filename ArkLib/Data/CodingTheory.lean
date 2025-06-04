@@ -1,4 +1,5 @@
 import ArkLib.Data.CodingTheory.Basic
+import ArkLib.Data.CodingTheory.BivariatePoly
 import ArkLib.Data.CodingTheory.DivergenceOfSets
 import ArkLib.Data.CodingTheory.InterleavedCodes
 import ArkLib.Data.CodingTheory.LinearCodes
