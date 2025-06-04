@@ -2,7 +2,6 @@ import ArkLib.Data.CodingTheory.ReedSolomon
 import ArkLib.Data.CodingTheory.LinearCodes
 import Mathlib.Data.Int.Basic
 import Mathlib.Algebra.Polynomial.Eval.Defs
-import Mathlib
 
 open Classical
 open Polynomial
@@ -72,13 +71,27 @@ lemma natDegree_lt_of_lbounded_zero_coeff [Semiring F] {p : F[X]} {deg : ℕ} [N
   (h : ∀ i, deg ≤ i → p.coeff i = 0) : p.natDegree < deg := by
   aesop (add unsafe [(by by_contra), (by specialize h p.natDegree)])
 
---katy : this IS the encoding map?
-def polynomialOfCoeffs [Semiring F] {deg : ℕ} [NeZero deg] (coeffs : Fin deg → F) : F[X] :=
+def polynomialOfCoeffs [Semiring F] {deg : ℕ} (coeffs : Fin deg → F) : F[X] :=
   ⟨
     Finset.map ⟨Fin.val, Fin.val_injective⟩ {i | coeffs i ≠ 0},
     fun i ↦ if h : i < deg then coeffs ⟨i, h⟩ else 0,
-    fun a ↦ by aesop (add safe (by existsi a))
-                     (add simp [Fin.natCast_def, Nat.mod_eq_of_lt])
+    by
+      intros a
+      apply Iff.intro
+      · intros h
+        simp at h
+        rcases h with ⟨a_fin, h⟩
+        simp
+        rw [←h.2]
+        exists a_fin.2
+        exact h.1
+      · simp
+        intros h h'
+        exists ⟨a, h⟩
+
+
+    --  aesop (add safe (by existsi a))
+    --                  (add simp [Fin.natCast_def, Nat.mod_eq_of_lt])
   ⟩
 
 def coeffsOfPolynomial [Semiring F] {deg : ℕ} [NeZero deg] (p : F[X]) : Fin deg → F :=
