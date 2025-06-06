@@ -717,7 +717,7 @@ lemma liftF_eval {f : Fin n → α} {i : Fin n} :
   liftF f i.val = f i := by
   aesop (add simp liftF)
 
-lemma liftF_ne_0 {f : Fin n → α} {i : ℕ}
+lemma liftF_ne_zero {f : Fin n → α} {i : ℕ}
   (h : liftF f i ≠ 0)
   : i < n := by
   aesop (add simp liftF)

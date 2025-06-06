@@ -67,7 +67,7 @@ private lemma Q_ne_zero (hne : p ≠ 0) : Q ωs f p e ≠ 0 := by
 private lemma solution_to_Q_from_Q 
   (h_p_deg : p.natDegree < k)
   (h_dist : (Δ₀(f, p.eval ∘ ωs) : ℕ) ≤ e) 
-  : solution_to_Q e k (E_and_Q_to_a_solution e (E ωs f p e) (Q ωs f p e)) = Q ωs f p e := by
+  : solutionToQ e k (E_and_Q_to_a_solution e (E ωs f p e) (Q ωs f p e)) = Q ωs f p e := by
   refine Polynomial.ext fun i ↦ ?p₁
   simp [Fin.liftF]
   split_ifs <;>
@@ -80,10 +80,10 @@ private lemma solution_to_Q_from_Q
         (add simp [Q_ne_zero, Polynomial.degree_eq_natDegree])
         (add safe (by omega))
   
-private lemma solution_to_E_from_E
+private lemma solutionToE_from_E
   (h_p_deg : p.natDegree < k)
   (h_dist : (Δ₀(f, p.eval ∘ ωs) : ℕ) ≤ e) 
-  : solution_to_E e k (E_and_Q_to_a_solution e (E ωs f p e) (Q ωs f p e)) = E ωs f p e := by
+  : solutionToE e k (E_and_Q_to_a_solution e (E ωs f p e) (Q ωs f p e)) = E ωs f p e := by
   apply Polynomial.ext 
   intro i 
   simp 
@@ -155,7 +155,7 @@ lemma linsolve_always_some_berlekamp_welch
     simp [
       BerlekampWelchCondition_iff_Solution,
       solution_to_Q_from_Q hp_deg h_ham,
-      solution_to_E_from_E hp_deg h_ham,
+      solutionToE_from_E hp_deg h_ham,
       E_and_Q_BerlekampWelch_condition hp_deg h_ham]
 
 end BerlekampWelch
