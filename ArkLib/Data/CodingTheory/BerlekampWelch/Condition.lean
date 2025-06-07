@@ -179,46 +179,23 @@ lemma solutionToE_eq_polynomialOfCoeffs
   unfold solutionToE polynomialOfCoeffs
   aesop
 
+@[simp]
 lemma eval_solutionToE {x : F} :
   eval x (solutionToE e k v) = x ^ e + ∑ y : Fin e, v ⟨y, by omega⟩ * x ^ y.1 := by
-  unfold solutionToE
-  rw [Polynomial.eval_eq_sum, Polynomial.sum_def]
-  simp [-ne_eq]
-  rw [Finset.sum_ite_of_false (by aesop)]
-  rw [Finset.sum_ite_of_true (by aesop)]
-  rw [Finset.sum_filter_of_ne]
-  swap
-  simp [-ne_eq]
-  intros n h₁ h₂
-  simp [liftF] at h₂
-  rcases h₂ with ⟨⟨h₂, h₃⟩, h₄⟩
-  rwa [liftF_ne_zero_of_lt h₂]
-
-  rw [Finset.sum_bij (κ := Fin e)
-                     (t := (List.finRange e).toFinset)
-                     (i := fun x h ↦ ⟨x, Finset.mem_range.1 h⟩)
-                     (g := fun y : Fin e ↦ v ⟨y.1, by omega⟩ * x ^ y.1)]
-  swap
-  simp
-  swap
-  simp
-  swap
-  simp; intros k
-  use k.1, k.2
-  swap
-  simp
-  intros a ha
-  rw [liftF_eq_of_lt (by omega)]
-  simp
-  simp
-  
+  suffices ∑ y ∈ Finset.range e, liftF v y * x ^ y = _ by
+    simp [solutionToE, Polynomial.eval_eq_sum, Polynomial.sum_def]
+    rw [Finset.sum_ite_of_false, Finset.sum_ite_of_true, Finset.sum_filter_of_ne]
+    all_goals aesop
+  rw [Finset.sum_bij (i := fun x h ↦ ⟨x, Finset.mem_range.1 h⟩)
+                     (g := fun y : Fin e ↦ v ⟨y.1, by omega⟩ * x ^ y.1)] <;>
+    aesop (add simp liftF) (add safe (by omega))  
 
 @[simp]
 lemma solutionToE_coeff :
   (solutionToE e k v).coeff n = if n = e then 1 else if n < e then liftF v n else 0 := rfl
 
 @[simp]
-lemma solutionToE_natDegree :
+lemma natDegree_solutionToE :
   (solutionToE e k v).natDegree = e := by
   simp [solutionToE, Polynomial.natDegree, Polynomial.degree]
   rw [sup_eq_left.2 ] <;> try simp
@@ -252,11 +229,48 @@ lemma solutionToQ_coeff :
   (solutionToQ e k v).coeff n = if n < e + k then liftF v (e + n) else 0 := rfl
 
 @[simp]
-lemma solutionToQ_natDegree :
+lemma natDegree_solutionToQ :
   (solutionToQ e k v).natDegree ≤ e + k - 1 := by
   simp [solutionToQ, Polynomial.natDegree, Polynomial.degree]
   rw [WithBot.unbotD_le_iff] <;>
   aesop (add safe (by omega))
+
+@[simp]
+lemma natDegree_solutionToQ_eq [NeZero e] :
+  (solutionToQ e k v).natDegree = sorry := by
+  simp [solutionToQ, Polynomial.natDegree, Polynomial.degree]
+  have : e ≠ 0 := by aesop
+  simp [WithBot.unbotD, WithBot.recBotCoe, liftF]
+  
+
+  by_cases eq : e + k - 1 = 0 <;> simp [eq, liftF]
+  
+
+lemma eval_solutionToQ {x : F} [NeZero e] :
+  eval x (solutionToQ e k v) = ∑ (i : Fin (solutionToQ e k v).natDegree), v ⟨e + i.1, (by have : e ≠ 0 := sorry; rcases i with ⟨i, hi⟩; simp; omega)⟩ * x ^ i.1 := by
+  have h : e ≠ 0 := by aesop
+  rw [Polynomial.eval_eq_sum_range]
+  have := natDegree_solutionToQ (F := F) (e := e) (k := k) (v := v)
+  simp
+  generalize eq : (Polynomial.natDegree (R := F) _) = X at *
+  
+  rw [Finset.sum_bij (t := (List.finRange (X + 1)).toFinset)
+                     (κ := Fin (X + 1))
+                     (i := fun x hx ↦ ⟨x, lt_of_lt_of_le (Finset.mem_range.1 hx) (by omega)⟩)
+                     (g := fun i ↦ liftF v (e + i.1) * x ^ i.1)] <;> try aesop (add simp liftF) (add safe (by omega))
+  rw [Finset.sum_dite_of_true]
+  swap
+  simp
+  rintro ⟨i, hi⟩
+  have := natDegree_solutionToQ (F := F) (e := e) (k := k) (v := v) 
+  simp
+  
+  omega
+  
+  
+  
+  done
+  
 
 @[simp]
 lemma solutionToE_and_Q_E_and_Q_to_a_solution :
@@ -293,14 +307,14 @@ lemma isBerlekampWelchSolution_zero_zero [NeZero n] {v : Fin (2 * 0 + 0) → F} 
   
 set_option maxHeartbeats 400000 in
 private lemma solution_to_BerlekampWelch_condition₀
-  [NeZero n] 
+  [NeZero n]
   {v : Fin (2 * e + 0) → F}
   (h_sol : IsBerlekampWelchSolution e 0 ωs f v)
   : BerlekampWelchCondition e 0 ωs f (solutionToE e 0 v) (solutionToQ e 0 v) :=
   ⟨
     fun i ↦ by rcases e with _ | e
                · aesop
-               · rw [solutionToE_eq_polynomialOfCoeffs]
+               · simp
                  done
                ,
     _,
@@ -332,7 +346,7 @@ private lemma solution_to_BerlekampWelch_condition₀
   --   rw [Finset.sum_ite_of_false (by aesop)]
   --   rw [Finset.sum_ite_of_true (by aesop)]
   --   rw [Polynomial.eval_eq_sum_range' (n := e + 0) 
-  --         (Nat.lt_of_le_of_lt solutionToQ_natDegree (by omega))]
+  --         (Nat.lt_of_le_of_lt natDegree_solutionToQ (by omega))]
   --   simp 
   --   rw [Finset.sum_ite_of_true (by aesop)]
   --   simp [IsBerlekampWelchSolution] at h_sol 
@@ -405,7 +419,7 @@ private lemma solution_to_BerlekampWelch_condition₀
   --   by simp,
   --   by simp,
   --   by {
-  --     apply solutionToQ_natDegree
+  --     apply natDegree_solutionToQ
   --   }⟩
 
 set_option maxHeartbeats 400000 in
@@ -426,11 +440,11 @@ private lemma solution_to_BerlekampWelch_condition₀'
       rfl
     rw [Finset.range_succ]
     rw [Finset.sum_insert (by aesop)]
-    simp
+    simp [-eval_solutionToE]
     rw [Finset.sum_ite_of_false (by aesop)]
     rw [Finset.sum_ite_of_true (by aesop)]
     rw [Polynomial.eval_eq_sum_range' (n := e + 0) 
-          (Nat.lt_of_le_of_lt solutionToQ_natDegree (by omega))]
+          (Nat.lt_of_le_of_lt natDegree_solutionToQ (by omega))]
     simp 
     rw [Finset.sum_ite_of_true (by aesop)]
     simp [IsBerlekampWelchSolution] at h_sol 
@@ -503,7 +517,7 @@ private lemma solution_to_BerlekampWelch_condition₀'
     by simp,
     by simp,
     by {
-      apply solutionToQ_natDegree
+      apply natDegree_solutionToQ
     }⟩
 
 set_option maxHeartbeats 400000 in
@@ -527,7 +541,7 @@ private lemma solution_to_BerlekampWelch_condition {e k : ℕ}
     rw [Finset.sum_ite_of_false (by aesop)]
     rw [Finset.sum_ite_of_true (by aesop)]
     rw [Polynomial.eval_eq_sum_range' (n := e + k) 
-          (Nat.lt_of_le_of_lt solutionToQ_natDegree (by omega))]
+          (Nat.lt_of_le_of_lt natDegree_solutionToQ (by omega))]
     simp 
     rw [Finset.sum_ite_of_true (by aesop)]
     simp [IsBerlekampWelchSolution] at h_sol 
