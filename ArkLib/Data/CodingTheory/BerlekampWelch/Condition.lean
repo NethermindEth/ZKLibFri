@@ -233,44 +233,31 @@ lemma natDegree_solutionToQ :
   (solutionToQ e k v).natDegree ≤ e + k - 1 := by
   simp [solutionToQ, Polynomial.natDegree, Polynomial.degree]
   rw [WithBot.unbotD_le_iff] <;>
-  aesop (add safe (by omega))
+  aesop (add safe (by omega))  
+
+private lemma eval_solutionToQ_aux {i : Fin ((solutionToQ e k v).natDegree + 1)} [NeZero e]
+  : e + i < 2 * e + k := by
+  have : e ≠ 0 := (by aesop)
+  have := natDegree_solutionToQ (e := e) (k := k) (v := v)
+  omega
 
 @[simp]
-lemma natDegree_solutionToQ_eq [NeZero e] :
-  (solutionToQ e k v).natDegree = sorry := by
-  simp [solutionToQ, Polynomial.natDegree, Polynomial.degree]
-  have : e ≠ 0 := by aesop
-  simp [WithBot.unbotD, WithBot.recBotCoe, liftF]
-  
-
-  by_cases eq : e + k - 1 = 0 <;> simp [eq, liftF]
-  
-
 lemma eval_solutionToQ {x : F} [NeZero e] :
-  eval x (solutionToQ e k v) = ∑ (i : Fin (solutionToQ e k v).natDegree), v ⟨e + i.1, (by have : e ≠ 0 := sorry; rcases i with ⟨i, hi⟩; simp; omega)⟩ * x ^ i.1 := by
+  eval x (solutionToQ e k v) =
+  ∑ (i : Fin ((solutionToQ e k v).natDegree + 1)), v ⟨e + i.1, eval_solutionToQ_aux⟩ * x ^ i.1 := by
   have h : e ≠ 0 := by aesop
   rw [Polynomial.eval_eq_sum_range]
-  have := natDegree_solutionToQ (F := F) (e := e) (k := k) (v := v)
+  have := natDegree_solutionToQ (e := e) (k := k) (v := v)
+  set X := (Polynomial.natDegree (R := F) _) with eq
   simp
-  generalize eq : (Polynomial.natDegree (R := F) _) = X at *
-  
   rw [Finset.sum_bij (t := (List.finRange (X + 1)).toFinset)
                      (κ := Fin (X + 1))
                      (i := fun x hx ↦ ⟨x, lt_of_lt_of_le (Finset.mem_range.1 hx) (by omega)⟩)
-                     (g := fun i ↦ liftF v (e + i.1) * x ^ i.1)] <;> try aesop (add simp liftF) (add safe (by omega))
-  rw [Finset.sum_dite_of_true]
-  swap
+                     (g := fun i ↦ liftF v (e + i.1) * x ^ i.1)] <;>
+                        aesop (config := {warnOnNonterminal := false})
+                              (add simp liftF) (add safe (by omega))
+  rw [Finset.sum_dite_of_true (by aesop (add safe apply eval_solutionToQ_aux))]
   simp
-  rintro ⟨i, hi⟩
-  have := natDegree_solutionToQ (F := F) (e := e) (k := k) (v := v) 
-  simp
-  
-  omega
-  
-  
-  
-  done
-  
 
 @[simp]
 lemma solutionToE_and_Q_E_and_Q_to_a_solution :
