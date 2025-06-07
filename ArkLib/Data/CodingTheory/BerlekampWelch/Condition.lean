@@ -171,13 +171,47 @@ variable [DecidableEq F]
 def solutionToE (e k : ℕ) (v : Fin (2 * e + k) → F) : Polynomial F :=
   ⟨⟨insert e ((Finset.range e).filter (fun x => liftF v x ≠ 0)), 
     fun i => if i = e then 1 else if i < e then liftF v i else 0, by 
-      aesop (add safe forward liftF_ne_zero)
+      aesop (add safe forward lt_of_liftF_ne_zero)
     ⟩⟩
 
 lemma solutionToE_eq_polynomialOfCoeffs
   (h : n < e) : (solutionToE e k v).coeff n = (polynomialOfCoeffs v).coeff n := by
   unfold solutionToE polynomialOfCoeffs
   aesop
+
+lemma eval_solutionToE {x : F} :
+  eval x (solutionToE e k v) = x ^ e + ∑ y : Fin e, v ⟨y, by omega⟩ * x ^ y.1 := by
+  unfold solutionToE
+  rw [Polynomial.eval_eq_sum, Polynomial.sum_def]
+  simp [-ne_eq]
+  rw [Finset.sum_ite_of_false (by aesop)]
+  rw [Finset.sum_ite_of_true (by aesop)]
+  rw [Finset.sum_filter_of_ne]
+  swap
+  simp [-ne_eq]
+  intros n h₁ h₂
+  simp [liftF] at h₂
+  rcases h₂ with ⟨⟨h₂, h₃⟩, h₄⟩
+  rwa [liftF_ne_zero_of_lt h₂]
+
+  rw [Finset.sum_bij (κ := Fin e)
+                     (t := (List.finRange e).toFinset)
+                     (i := fun x h ↦ ⟨x, Finset.mem_range.1 h⟩)
+                     (g := fun y : Fin e ↦ v ⟨y.1, by omega⟩ * x ^ y.1)]
+  swap
+  simp
+  swap
+  simp
+  swap
+  simp; intros k
+  use k.1, k.2
+  swap
+  simp
+  intros a ha
+  rw [liftF_eq_of_lt (by omega)]
+  simp
+  simp
+  
 
 @[simp]
 lemma solutionToE_coeff :
@@ -214,11 +248,11 @@ def solutionToQ (e k : ℕ) (v : Fin (2 * e + k) → F) : Polynomial F :=
   ⟩
 
 @[simp]
-lemma solution_to_Q_coeff :
+lemma solutionToQ_coeff :
   (solutionToQ e k v).coeff n = if n < e + k then liftF v (e + n) else 0 := rfl
 
 @[simp]
-lemma solution_to_Q_natDegree :
+lemma solutionToQ_natDegree :
   (solutionToQ e k v).natDegree ≤ e + k - 1 := by
   simp [solutionToQ, Polynomial.natDegree, Polynomial.degree]
   rw [WithBot.unbotD_le_iff] <;>
@@ -266,7 +300,7 @@ private lemma solution_to_BerlekampWelch_condition₀
   ⟨
     fun i ↦ by rcases e with _ | e
                · aesop
-               · simp at *
+               · rw [solutionToE_eq_polynomialOfCoeffs]
                  done
                ,
     _,
@@ -298,7 +332,7 @@ private lemma solution_to_BerlekampWelch_condition₀
   --   rw [Finset.sum_ite_of_false (by aesop)]
   --   rw [Finset.sum_ite_of_true (by aesop)]
   --   rw [Polynomial.eval_eq_sum_range' (n := e + 0) 
-  --         (Nat.lt_of_le_of_lt solution_to_Q_natDegree (by omega))]
+  --         (Nat.lt_of_le_of_lt solutionToQ_natDegree (by omega))]
   --   simp 
   --   rw [Finset.sum_ite_of_true (by aesop)]
   --   simp [IsBerlekampWelchSolution] at h_sol 
@@ -371,7 +405,7 @@ private lemma solution_to_BerlekampWelch_condition₀
   --   by simp,
   --   by simp,
   --   by {
-  --     apply solution_to_Q_natDegree
+  --     apply solutionToQ_natDegree
   --   }⟩
 
 set_option maxHeartbeats 400000 in
@@ -396,7 +430,7 @@ private lemma solution_to_BerlekampWelch_condition₀'
     rw [Finset.sum_ite_of_false (by aesop)]
     rw [Finset.sum_ite_of_true (by aesop)]
     rw [Polynomial.eval_eq_sum_range' (n := e + 0) 
-          (Nat.lt_of_le_of_lt solution_to_Q_natDegree (by omega))]
+          (Nat.lt_of_le_of_lt solutionToQ_natDegree (by omega))]
     simp 
     rw [Finset.sum_ite_of_true (by aesop)]
     simp [IsBerlekampWelchSolution] at h_sol 
@@ -469,7 +503,7 @@ private lemma solution_to_BerlekampWelch_condition₀'
     by simp,
     by simp,
     by {
-      apply solution_to_Q_natDegree
+      apply solutionToQ_natDegree
     }⟩
 
 set_option maxHeartbeats 400000 in
@@ -493,7 +527,7 @@ private lemma solution_to_BerlekampWelch_condition {e k : ℕ}
     rw [Finset.sum_ite_of_false (by aesop)]
     rw [Finset.sum_ite_of_true (by aesop)]
     rw [Polynomial.eval_eq_sum_range' (n := e + k) 
-          (Nat.lt_of_le_of_lt solution_to_Q_natDegree (by omega))]
+          (Nat.lt_of_le_of_lt solutionToQ_natDegree (by omega))]
     simp 
     rw [Finset.sum_ite_of_true (by aesop)]
     simp [IsBerlekampWelchSolution] at h_sol 
@@ -633,7 +667,7 @@ lemma BerlekampWelch_Q_ne_0 {e k : ℕ}
   rw [Finset.card_image_of_injective _ h_inj, h_bw.E_natDegree] at h_card
   omega
 
-lemma solution_to_Q_ne_zero {e k : ℕ} 
+lemma solutionToQ_ne_zero {e k : ℕ} 
   [NeZero n] 
   {ωs f : Fin n → F}
   {v : Fin (2 * e + k) → F}

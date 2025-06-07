@@ -114,7 +114,7 @@ theorem decoder_eq_some {e k : ℕ} [NeZero n] {ωs f : Fin n → F} {p : Polyno
         have h :=
           Q'_div_E'_eq_p
             h_deg he hn h_dist h_inj
-            (solution_to_Q_ne_zero (not_le.1 hif)
+            (solutionToQ_ne_zero (not_le.1 hif)
                                 (BerlekampWelchCondition_iff_Solution.2 h_cond) h_inj) hp h_cond
         simp_all
 
