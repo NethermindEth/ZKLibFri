@@ -33,26 +33,26 @@ structure BerlekampWelchCondition (e k : ℕ) (ωs f : Fin n → F) (E Q : Polyn
   cond: ∀ i : Fin n, Q.eval (ωs i) = (f i) * E.eval (ωs i) 
   E_natDegree : E.natDegree = e
   E_leadingCoeff : E.coeff e = 1 
-  Q_natDegree : Q.natDegree ≤ e + k - 1  
+  Q_natDegree : Q.natDegree ≤ e + k - 1
+
+def Rhs (e : ℕ) (ωs f : Fin n → F) (i : Fin n) : F := 
+  let αᵢ := ωs i
+  (-(f i) * αᵢ^e)
 
 def BerlekampWelchMatrix [NeZero n] 
   (e k : ℕ) 
   (ωs f : Fin n → F) : Matrix (Fin n) (Fin (2 * e + k)) F := 
   Matrix.of fun i j => 
     let αᵢ := ωs i
-    if ↑j < e then f i * αᵢ^(↑j : ℕ) else -αᵢ^(↑j - e)
+    if ↑j < e then -Rhs j.1 ωs f i else -αᵢ^(j - e)
 
 lemma bwm_of_pos [NeZero n] (h : j.1 < e) :
-  BerlekampWelchMatrix e k ωs f i j = f i * (ωs i)^j.1 := by
+  BerlekampWelchMatrix e k ωs f i j = -Rhs j.1 ωs f i := by
   simp [BerlekampWelchMatrix, h]
 
 lemma bwm_of_neg [NeZero n] (h : e ≤ j.1) :
-  BerlekampWelchMatrix e k ωs f i j = -(ωs i)^(↑j - e) := by
+  BerlekampWelchMatrix e k ωs f i j = -(ωs i)^(j - e) := by
   simp [BerlekampWelchMatrix, h]
-  
-def Rhs (e : ℕ) (ωs f : Fin n → F) (i : Fin n) : F := 
-  let αᵢ := ωs i
-  (-(f i) * αᵢ^e)
 
 @[simp]
 lemma Rhs_zero_eq_neg : Rhs 0 ωs f i = -f i := by simp [Rhs]
@@ -81,6 +81,12 @@ lemma is_berlekamp_welch_solution_ext [NeZero n]
   : IsBerlekampWelchSolution e k ωs f v := by
   aesop (add simp [IsBerlekampWelchSolution, Rhs])
 
+@[simp]
+lemma Rhs_add_one : Rhs (e + 1) ωs f = fun i ↦ Rhs e ωs f i * ωs i := by
+  ext n
+  unfold Rhs
+  ring
+
 noncomputable def E_and_Q_to_a_solution (e : ℕ) (E Q : Polynomial F) (i : Fin n) : F :=
   if i < e then E.toFinsupp i else Q.toFinsupp (i - e)
 
@@ -103,6 +109,12 @@ lemma natDegree_truncate [φ : NeZero n] : (truncate p n).natDegree < n := by
   simp only [truncate, Polynomial.natDegree, Polynomial.degree]
   rw [WithBot.unbotD_lt_iff] <;>
   aesop (add simp [Finset.max]) (add safe [(by omega)])
+
+lemma mulVec_BerlekampWelchMatrix [NeZero n] :
+  (BerlekampWelchMatrix e k ωs f).mulVec v i =
+  ∑ x : Fin (2 * e + k), v x * if x < e then f i * ωs i ^ x.1 else -ωs i ^ (x - e) := by
+  simp [BerlekampWelchMatrix, Matrix.mulVec, dotProduct, Rhs]
+  ring_nf
 
 section 
 
@@ -127,7 +139,9 @@ private lemma BerlekampWelchCondition_to_Solution [NeZero n]
         rw [sum_ite]
         exact eq ▸ eq₁ ▸ eq₂ ▸
           congr_arg₂ _
-            (by rw [mul_sum]; exact sum_congr rfl fun _ _ ↦ by rw [bwm_of_pos (by aesop)]; ac_rfl)
+            (by rw [mul_sum]; exact sum_congr rfl fun _ _ ↦ by rw [
+                                                                 bwm_of_pos (by aesop), Rhs
+                                                               ]; ring)
             (sum_congr (by aesop) fun j hj ↦ by rw [bwm_of_neg (by aesop)])
   replace eq₁ : eval (ωs i) E - ωs i ^ e * E.coeff e = σ₁ := calc
                 _ = ∑ i_1 ∈ range (e + 1), E.coeff i_1 * ωs i ^ i_1 - ωs i ^ e * E.coeff e :=
@@ -169,10 +183,11 @@ open Polynomial
 variable [DecidableEq F]
 
 def solutionToE (e k : ℕ) (v : Fin (2 * e + k) → F) : Polynomial F :=
-  ⟨⟨insert e ((Finset.range e).filter (fun x => liftF v x ≠ 0)), 
-    fun i => if i = e then 1 else if i < e then liftF v i else 0, by 
-      aesop (add safe forward lt_of_liftF_ne_zero)
-    ⟩⟩
+  ⟨
+    insert e ((Finset.range e).filter (fun x => liftF v x ≠ 0)),
+    fun i => if i = e then 1 else if i < e then liftF v i else 0,
+    by aesop (add safe forward lt_of_liftF_ne_zero)
+  ⟩
 
 lemma solutionToE_eq_polynomialOfCoeffs
   (h : n < e) : (solutionToE e k v).coeff n = (polynomialOfCoeffs v).coeff n := by
@@ -237,7 +252,7 @@ lemma natDegree_solutionToQ :
 
 private lemma eval_solutionToQ_aux {i : Fin ((solutionToQ e k v).natDegree + 1)} [NeZero e]
   : e + i < 2 * e + k := by
-  have : e ≠ 0 := (by aesop)
+  have : e ≠ 0 := by aesop
   have := natDegree_solutionToQ (e := e) (k := k) (v := v)
   omega
 
@@ -259,6 +274,12 @@ lemma eval_solutionToQ {x : F} [NeZero e] :
   rw [Finset.sum_dite_of_true (by aesop (add safe apply eval_solutionToQ_aux))]
   simp
 
+@[simp]
+lemma eval_solutionToQ_zero {x : F} {v} : eval x (solutionToQ 0 k v) =
+                                          ∑ a ∈ Finset.range k, liftF v a * x ^ a := by
+  simp [eval_eq_sum, sum_def, solutionToQ, Finset.sum_filter]
+  refine Finset.sum_congr rfl (by aesop)
+  
 @[simp]
 lemma solutionToE_and_Q_E_and_Q_to_a_solution :
   E_and_Q_to_a_solution e (solutionToE e k v) (solutionToQ e k v) = v := by
@@ -291,7 +312,7 @@ omit [DecidableEq F] in
 lemma isBerlekampWelchSolution_zero_zero [NeZero n] {v : Fin (2 * 0 + 0) → F} :
   IsBerlekampWelchSolution 0 0 ωs f v ↔ f = 0 := by
   simp [IsBerlekampWelchSolution]
-  
+
 set_option maxHeartbeats 400000 in
 private lemma solution_to_BerlekampWelch_condition₀
   [NeZero n]
@@ -302,7 +323,27 @@ private lemma solution_to_BerlekampWelch_condition₀
     fun i ↦ by rcases e with _ | e
                · aesop
                · simp
-                 done
+                 apply_fun (-1 * ·) using (by simp [Function.Injective]); simp only [neg_one_mul]
+                 let t₁ := (f i) * ∑ x : Fin (e + 1), v ⟨x, by omega⟩ * ωs i ^ x.1
+                 rw [
+                   show -(f i * (ωs i ^ (e + 1) + _)) = Rhs (e + 1) ωs f i - t₁ by dsimp [Rhs]; ring,
+                   ←h_sol
+                 ]
+                 simp [BerlekampWelchMatrix, Matrix.mulVec, dotProduct, Rhs]
+                 
+                --  rw [←Rhs.eq_def]
+                --  rw [←h_sol]
+
+                --  have : -(f i * (ωs i ^ (e + 1) + ∑ x, v ⟨↑x, ⋯⟩ * ωs i ^ ↑x)) =
+                --         (-f i * ωs i ^ (e + 1)) + 
+
+                --  swap
+                --  simp [Function.Injective]
+                --  apply congrFun (a := i) at h_sol
+                --  simp at h_sol
+                --  simp [BerlekampWelchMatrix, Matrix.mulVec, dotProduct, Rhs] at h_sol
+                 
+                --  done
                ,
     _,
     _,
@@ -604,6 +645,114 @@ private lemma solution_to_BerlekampWelch_condition {e k : ℕ}
   · simp at hk 
     subst hk
     apply solution_to_BerlekampWelch_condition₀ h_sol
+
+set_option maxHeartbeats 400000 in
+private lemma solution_to_BerlekampWelch_condition' {e k : ℕ} 
+  [NeZero n] 
+  {ωs f : Fin n → F}
+  {v : Fin (2 * e + k) → F}
+  (h_sol : IsBerlekampWelchSolution e k ωs f v)
+  : BerlekampWelchCondition e k ωs f (solutionToE e k v) (solutionToQ e k v) := by
+  constructor
+  · rcases e with _ | e
+    · intros i
+      simp
+      apply congrFun (a := i) at h_sol
+      simp at h_sol
+      simp [IsBerlekampWelchSolution, BerlekampWelchMatrix, Rhs, Matrix.mulVec, dotProduct] at h_sol
+
+    intros i
+    simp
+  -- by_cases hk : 1 ≤ k 
+  -- · exact ⟨by {
+  --   intro i
+  --   symm
+  --   conv =>
+  --     lhs
+  --     rw [Polynomial.eval_eq_sum_range]
+  --     rfl
+  --   rw [Finset.range_succ]
+  --   rw [Finset.sum_insert (by aesop)]
+  --   simp
+  --   rw [Finset.sum_ite_of_false (by aesop)]
+  --   rw [Finset.sum_ite_of_true (by aesop)]
+  --   rw [Polynomial.eval_eq_sum_range' (n := e + k) 
+  --         (Nat.lt_of_le_of_lt natDegree_solutionToQ (by omega))]
+  --   simp 
+  --   rw [Finset.sum_ite_of_true (by aesop)]
+  --   simp [IsBerlekampWelchSolution] at h_sol 
+  --   have h_sol : (BerlekampWelchMatrix e k ωs f).mulVec v i = Rhs e ωs f i := by
+  --     rw [h_sol]
+  --   simp [BerlekampWelchMatrix, Rhs, Matrix.mulVec, dotProduct] at h_sol 
+  --   have h_aux {a b : F} : a = -b → -a = b := by aesop
+  --   have h_sol := h_aux h_sol 
+  --   rw [mul_add, ←h_sol]
+  --   rw [Finset.sum_ite]
+  --   conv =>
+  --     congr 
+  --     congr 
+  --     congr 
+  --     congr
+  --     rw [Finset.sum_bij
+  --       (t := Finset.range e)
+  --       (g := fun a => f i * (liftF v a * ωs i ^ a))
+  --       (by {
+  --         rintro ⟨a, hfin⟩ ha
+  --         exact a
+  --       })
+  --       (by {
+  --         rintro ⟨a, hfin⟩ ha 
+  --         simp
+  --         simp at ha 
+  --         exact ha
+  --       })
+  --       (by aesop)
+  --       (by {
+  --         intro b hb
+  --         simp 
+  --         exists ⟨b, by {
+  --           aesop (add safe (by omega))
+  --         }⟩
+  --         simp 
+  --         aesop
+  --       })
+  --       (by {
+  --         rintro ⟨a, hfin⟩ ha
+  --         simp [liftF, hfin ]
+  --         ring
+  --       })]
+  --     rfl
+  --     rfl 
+  --     rfl
+  --     rfl
+  --   rw [Finset.mul_sum]
+  --   rw [neg_add, add_comm]
+  --   rw [←add_assoc]
+  --   rw [add_neg_cancel]
+  --   simp 
+  --   apply Finset.sum_bij (by {
+  --     intro a ha 
+  --     exact a.val - e
+  --   })
+  --   · rintro ⟨a, ha⟩
+  --     simp
+  --     omega 
+  --   · aesop (add safe (by omega))
+  --   · intro b hb 
+  --     exists ⟨b + e, by aesop (add safe (by omega))⟩
+  --     aesop
+  --   · rintro ⟨a, hfin⟩ ha 
+  --     simp 
+  --     simp at ha
+  --     simp [liftF]
+  --     aesop (add safe (by ring))
+  -- }, 
+  -- by simp,
+  -- by simp,
+  -- by simp⟩
+  -- · simp at hk 
+  --   subst hk
+  --   apply solution_to_BerlekampWelch_condition₀ h_sol
 
 theorem BerlekampWelchCondition_iff_Solution {e k : ℕ} [NeZero n]
   {ωs f : Fin n → F} {v : Fin (2 * e + k) → F} 
