@@ -256,38 +256,42 @@ private lemma eval_solutionToQ_aux {i : Fin ((solutionToQ e k v).natDegree + 1)}
   have := natDegree_solutionToQ (e := e) (k := k) (v := v)
   omega
 
-@[simp]
-lemma eval_solutionToQ {x : F} [NeZero e] :
-  eval x (solutionToQ e k v) =
-  ∑ (i : Fin ((solutionToQ e k v).natDegree + 1)), v ⟨e + i.1, eval_solutionToQ_aux⟩ * x ^ i.1 := by
-  have h : e ≠ 0 := by aesop
-  rw [Polynomial.eval_eq_sum_range]
-  have := natDegree_solutionToQ (e := e) (k := k) (v := v)
-  set X := (Polynomial.natDegree (R := F) _) with eq
-  simp
-  rw [Finset.sum_bij (t := (List.finRange (X + 1)).toFinset)
-                     (κ := Fin (X + 1))
-                     (i := fun x hx ↦ ⟨x, lt_of_lt_of_le (Finset.mem_range.1 hx) (by omega)⟩)
-                     (g := fun i ↦ liftF v (e + i.1) * x ^ i.1)] <;>
-                        aesop (config := {warnOnNonterminal := false})
-                              (add simp liftF) (add safe (by omega))
-  rw [Finset.sum_dite_of_true (by aesop (add safe apply eval_solutionToQ_aux))]
-  simp
+-- @[simp]
+-- lemma eval_solutionToQ {x : F} [NeZero e] :
+--   eval x (solutionToQ e k v) =
+--   ∑ (i : Fin ((solutionToQ e k v).natDegree + 1)), v ⟨e + i.1, eval_solutionToQ_aux⟩ * x ^ i.1 := by
+--   have h : e ≠ 0 := by aesop
+--   rw [Polynomial.eval_eq_sum_range]
+--   have := natDegree_solutionToQ (e := e) (k := k) (v := v)
+--   set X := (Polynomial.natDegree (R := F) _) with eq
+--   simp
+--   rw [Finset.sum_bij (t := (List.finRange (X + 1)).toFinset)
+--                      (κ := Fin (X + 1))
+--                      (i := fun x hx ↦ ⟨x, lt_of_lt_of_le (Finset.mem_range.1 hx) (by omega)⟩)
+--                      (g := fun i ↦ liftF v (e + i.1) * x ^ i.1)] <;>
+--                         aesop (config := {warnOnNonterminal := false})
+--                               (add simp liftF) (add safe (by omega))
+--   rw [Finset.sum_dite_of_true (by aesop (add safe apply eval_solutionToQ_aux))]
+--   simp
 
-lemma eval_solutionToQ' {x : F} :
+lemma eval_solutionToQ_cast {x : F} (h : e = 0) :
+  eval x (solutionToQ e k v) = ∑ i ∈ Finset.range k, liftF v i * x ^ i := by
+  subst h
+  simp [solutionToQ]
+  rw [eval_eq_sum, sum_def]; simp
+  rw [Finset.sum_filter]; simp
+  exact Finset.sum_congr rfl (by aesop)
+
+@[simp]
+lemma eval_solutionToQ {x : F} :
   eval x (solutionToQ e k v) =
-  if h : e = 0
-  then ∑ i ∈ Finset.range k, liftF v i * x ^ i
-  else ∑ (i : Fin ((solutionToQ e k v).natDegree + 1)),
-         v ⟨e + i.1, haveI : NeZero e := by constructor; assumption
-                     eval_solutionToQ_aux⟩ * x ^ i.1 := by
-  by_cases eq : e = 0
-  · simp [eq, solutionToQ]
-    rw [eval_eq_sum, sum_def]; simp
-    rw [Finset.sum_filter]; simp
-    exact Finset.sum_congr rfl (by aesop)
-  · have : NeZero e := by constructor; aesop
-    simp [eq]
+  ∑ i ∈ Finset.range (e + k), liftF v (e + i) * x ^ i := by
+  rcases e with _ | e
+  · simp [eval_solutionToQ_cast]
+  · rw [Polynomial.eval_eq_sum_range'
+          (n := (e + 1) + k) 
+          (Nat.lt_of_le_of_lt natDegree_solutionToQ (by omega))]
+    refine Finset.sum_congr rfl fun x hx ↦ by simp at *; rw [liftF_eq_of_lt (by omega)]; omega
 
 @[simp]
 lemma eval_solutionToQ_zero {x : F} {v} : eval x (solutionToQ 0 k v) =
@@ -672,149 +676,247 @@ private lemma solution_to_BerlekampWelch_condition' {e k : ℕ}
   · intros i
     apply congrFun (a := i) at h_sol
     rw [mulVec_BerlekampWelchMatrix_eq] at h_sol; simp at h_sol
-    rw [eval_solutionToQ']
-    simp [liftF, h_sol.symm]
-    rw [Finset.sum_fin_eq_sum_range]
-    simp
-    rcases e with _ | e
-    · simp at h_sol ⊢
-      rw [Finset.sum_fin_eq_sum_range] at h_sol
-      aesop
-    · simp
-      rw [Finset.sum_dite_of_true (by simp)]
-      apply_fun (-1 * ·) using (by simp [Function.Injective]); simp only [neg_one_mul]
-      simp_rw [mul_add]
-      rw [
-        neg_add, ←neg_mul, ←Rhs.eq_def, ←h_sol,
-        Finset.sum_ite, Finset.sum_filter, Finset.sum_filter
-      ]
-      simp
-      set F := v _ * ωs i ^ _ with eq
-      rw [Finset.sum_bij' (ι := { x // x ∈ Finset.range (e + 1) })
-                          (κ := Fin (e + 1))
-                          (t := { x | x.1 < e + 1})
-                          (g := fun x ↦ v x * ωs i ^ x.1)
-                          (fun a _ ↦ ⟨a.1, Finset.mem_range.1 a.2⟩)
-                          (fun a _ ↦ ⟨a.1, Finset.mem_range.2 a.2⟩)
-                          (by simp)
-                          (by simp)
-                          (by simp)
-                          (by simp)
-                          (by simp; intros; left; congr; rw [Nat.mod_eq_of_lt (by omega)])]
-            
+    simp [liftF]
+    apply_fun (-1 * ·) using (by simp [Function.Injective]); simp only [neg_one_mul]
+    rw [
+      ←neg_mul, mul_add, ←Rhs.eq_def, ←h_sol,
+      Finset.sum_dite_of_true (by simp; omega), Finset.sum_ite,
+      neg_mul
+    ]
+    rw [←add_neg_eq_iff_eq_add]
+    rw [←sub_eq_iff_eq_add]
+    
+
+    
 
 
 
-      conv_rhs => simp only [mul_add]
-      rw [←Rhs.eq_def]
-      simp [Rhs] at h_sol ⊢
-      rw [Finset.sum_dite_of_true (by simp)]
-      rw [Finset.sum_ite] at h_sol
-      rw [Finset.sum_filter] at h_sol
-      rw [Finset.sum_filter] at h_sol
-      simp at h_sol
+--     rcases k with _ | k
+--     · simp
 
--- apply_fun (-1 * ·) using (by simp [Function.Injective]); simp only [neg_one_mul]      
+--       done
 
-  · rcases e with _ | e
-    · intros i
-      apply congrFun (a := i) at h_sol
-      rw [mulVec_BerlekampWelchMatrix_eq] at h_sol; simp at h_sol
-      simp [liftF, h_sol.symm]
-      rw [Finset.sum_fin_eq_sum_range]
-      simp
-    intros i
-    simp
-  -- by_cases hk : 1 ≤ k 
-  -- · exact ⟨by {
-  --   intro i
-  --   symm
-  --   conv =>
-  --     lhs
-  --     rw [Polynomial.eval_eq_sum_range]
-  --     rfl
-  --   rw [Finset.range_succ]
-  --   rw [Finset.sum_insert (by aesop)]
-  --   simp
-  --   rw [Finset.sum_ite_of_false (by aesop)]
-  --   rw [Finset.sum_ite_of_true (by aesop)]
-  --   rw [Polynomial.eval_eq_sum_range' (n := e + k) 
-  --         (Nat.lt_of_le_of_lt natDegree_solutionToQ (by omega))]
-  --   simp 
-  --   rw [Finset.sum_ite_of_true (by aesop)]
-  --   simp [IsBerlekampWelchSolution] at h_sol 
-  --   have h_sol : (BerlekampWelchMatrix e k ωs f).mulVec v i = Rhs e ωs f i := by
-  --     rw [h_sol]
-  --   simp [BerlekampWelchMatrix, Rhs, Matrix.mulVec, dotProduct] at h_sol 
-  --   have h_aux {a b : F} : a = -b → -a = b := by aesop
-  --   have h_sol := h_aux h_sol 
-  --   rw [mul_add, ←h_sol]
-  --   rw [Finset.sum_ite]
-  --   conv =>
-  --     congr 
-  --     congr 
-  --     congr 
-  --     congr
-  --     rw [Finset.sum_bij
-  --       (t := Finset.range e)
-  --       (g := fun a => f i * (liftF v a * ωs i ^ a))
-  --       (by {
-  --         rintro ⟨a, hfin⟩ ha
-  --         exact a
-  --       })
-  --       (by {
-  --         rintro ⟨a, hfin⟩ ha 
-  --         simp
-  --         simp at ha 
-  --         exact ha
-  --       })
-  --       (by aesop)
-  --       (by {
-  --         intro b hb
-  --         simp 
-  --         exists ⟨b, by {
-  --           aesop (add safe (by omega))
-  --         }⟩
-  --         simp 
-  --         aesop
-  --       })
-  --       (by {
-  --         rintro ⟨a, hfin⟩ ha
-  --         simp [liftF, hfin ]
-  --         ring
-  --       })]
-  --     rfl
-  --     rfl 
-  --     rfl
-  --     rfl
-  --   rw [Finset.mul_sum]
-  --   rw [neg_add, add_comm]
-  --   rw [←add_assoc]
-  --   rw [add_neg_cancel]
-  --   simp 
-  --   apply Finset.sum_bij (by {
-  --     intro a ha 
-  --     exact a.val - e
-  --   })
-  --   · rintro ⟨a, ha⟩
-  --     simp
-  --     omega 
-  --   · aesop (add safe (by omega))
-  --   · intro b hb 
-  --     exists ⟨b + e, by aesop (add safe (by omega))⟩
-  --     aesop
-  --   · rintro ⟨a, hfin⟩ ha 
-  --     simp 
-  --     simp at ha
-  --     simp [liftF]
-  --     aesop (add safe (by ring))
-  -- }, 
-  -- by simp,
-  -- by simp,
-  -- by simp⟩
-  -- · simp at hk 
-  --   subst hk
-  --   apply solution_to_BerlekampWelch_condition₀ h_sol
+--     rw [eval_solutionToQ']
+--     simp [liftF, h_sol.symm]
+--     rw [Finset.sum_fin_eq_sum_range]
+--     simp
+--     rcases e with _ | e
+--     · simp at h_sol ⊢
+--       rw [Finset.sum_fin_eq_sum_range] at h_sol
+--       aesop
+--     · simp
+--       rw [Finset.sum_dite_of_true (by simp)]
+--       apply_fun (-1 * ·) using (by simp [Function.Injective]); simp only [neg_one_mul]
+--       simp_rw [mul_add]
+--       rw [
+--         neg_add, ←neg_mul, ←Rhs.eq_def, ←h_sol,
+--         Finset.sum_ite, Finset.sum_filter, Finset.sum_filter
+--       ]
+--       simp
+--       -- -- set F := v _ * ωs i ^ _ with eq
+      
+--       rw [Finset.sum_bij' (ι := { x // x ∈ Finset.range (e + 1) })
+--                           (κ := Fin (e + 1))
+--                           (t := { x | x.1 < e + 1})
+--                           (g := fun x ↦ v x * ωs i ^ x.1)
+--                           (fun a _ ↦ ⟨a.1, Finset.mem_range.1 a.2⟩)
+--                           (fun a _ ↦ ⟨a.1, Finset.mem_range.2 a.2⟩)
+--                           (by simp)
+--                           (by simp)
+--                           (by simp)
+--                           (by simp)
+--                           (by simp; intros; left; congr; rw [Nat.mod_eq_of_lt (by omega)])]
+
+--       rw [←Finset.sum_filter]
+--       -- rw (occs := [2]) [Finset.sum_fin_eq_sum_range]
+--       rw [←Finset.sum_filter]
+--       rw (occs := [2]) [Finset.sum_bij' (κ := Fin (e + 1))
+--                                         (t := { x | x.1 < e + 1})
+--                                         (g := fun x ↦ v x * (f i * ωs i ^ x.1))
+--                                         (fun a ha ↦ ⟨a.1, by simpa using ha⟩)
+--                                         (fun a ha ↦ ⟨a.1, by omega⟩)] <;> try simp
+--       set t₁ := ∑ x : Fin (e + 1), v ↑↑x * (f i * ωs i ^ x.1) with eq₁
+--       rw [show f i * ∑ x : Fin (e + 1), v ↑↑x * ωs i ^ x.1 = t₁
+--             by dsimp [t₁]; rw [Finset.mul_sum]; ac_rfl]
+--       simp
+--       have := natDegree_solutionToQ (v := v)
+--       rw [Finset.sum_bij' (ι := Fin (2 * (e + 1) + k))
+--                           (κ := Fin (e + 1))
+--                           (t := { x | x.1 < e + 1})
+--                           (g := fun x ↦ v x * ωs i ^ (x.1 - (e + 1)))]
+
+
+--       apply Finset.sum_bij' (i := fun ⟨a, ha₁⟩ ha₂ ↦ ⟨a + e + 1, by omega⟩)
+--                             (j := fun ⟨a, ha₁⟩ ha₂ ↦ ⟨a - (e + 1), by
+--                               simp at ha₂ this
+--                               rcases a with _ | a
+--                               · simp
+--                               · simp at *
+                                
+
+--                               simp [solutionToQ, Polynomial.natDegree, Polynomial.degree, liftF]
+--                               done⟩)
+--       simp
+--       sorry
+--       simp
+--       sorry
+--       simp
+--       sorry
+--       simp
+--       simp
+
+--       -- rcases k with _ | k
+--       -- · have := natDegree_solutionToQ (v := v)
+--       --   simp at *
+--       --   apply Finset.sum_bij' (i := fun a _ ↦ ⟨a.1 + (e + 1), by omega⟩) (j := fun a ha ↦ ⟨a.1 - (e + 1), by 
+--       --   rcases a with ⟨a, ha'⟩
+--       --   simp at *
+
+        
+--       --   set X := (solutionToQ (e + 1) 0 v).natDegree with eq₁
+        
+        
+--       --   done⟩)        
+--       --   swap
+--       --   simp
+--       --   intros a ha
+--       --   rcases a with ⟨a, ha'⟩
+--       --   simp at *
+--       --   simp at ha
+--       --   omega
+
+        
+
+
+--       -- apply Finset.sum_bij' (i := fun a _ ↦ ⟨2 * a.1 - k, by omega⟩) (j := fun a ha ↦ ⟨e + k, by omega⟩)
+--       --   rcases a with ⟨a, ha'⟩
+--       --   simp at *
+--       --   set X := (solutionToQ (e + 1) k v).natDegree with eq₁
+        
+--       --   done⟩)
+
+
+
+--       rw [Finset.sum_bij' (κ := Fin (e + 1))
+--                           (t := { x | x.1 < e + 1})
+--                           (g := fun x ↦ v x * ωs i ^ (x.1 - (e + 1)))] <;> try simp
+--       swap
+--       intros a ha
+--       use a.1
+--       simp at this
+
+
+
+--       -- conv_rhs => simp only [mul_add]
+--       -- rw [←Rhs.eq_def]
+--       -- simp [Rhs] at h_sol ⊢
+--       -- rw [Finset.sum_dite_of_true (by simp)]
+--       -- rw [Finset.sum_ite] at h_sol
+--       -- rw [Finset.sum_filter] at h_sol
+--       -- rw [Finset.sum_filter] at h_sol
+--       -- simp at h_sol
+
+-- -- apply_fun (-1 * ·) using (by simp [Function.Injective]); simp only [neg_one_mul]      
+
+--   · rcases e with _ | e
+--     · intros i
+--       apply congrFun (a := i) at h_sol
+--       rw [mulVec_BerlekampWelchMatrix_eq] at h_sol; simp at h_sol
+--       simp [liftF, h_sol.symm]
+--       rw [Finset.sum_fin_eq_sum_range]
+--       simp
+--     intros i
+--     simp
+--   -- by_cases hk : 1 ≤ k 
+--   -- · exact ⟨by {
+--   --   intro i
+--   --   symm
+--   --   conv =>
+--   --     lhs
+--   --     rw [Polynomial.eval_eq_sum_range]
+--   --     rfl
+--   --   rw [Finset.range_succ]
+--   --   rw [Finset.sum_insert (by aesop)]
+--   --   simp
+--   --   rw [Finset.sum_ite_of_false (by aesop)]
+--   --   rw [Finset.sum_ite_of_true (by aesop)]
+--   --   rw [Polynomial.eval_eq_sum_range' (n := e + k) 
+--   --         (Nat.lt_of_le_of_lt natDegree_solutionToQ (by omega))]
+--   --   simp 
+--   --   rw [Finset.sum_ite_of_true (by aesop)]
+--   --   simp [IsBerlekampWelchSolution] at h_sol 
+--   --   have h_sol : (BerlekampWelchMatrix e k ωs f).mulVec v i = Rhs e ωs f i := by
+--   --     rw [h_sol]
+--   --   simp [BerlekampWelchMatrix, Rhs, Matrix.mulVec, dotProduct] at h_sol 
+--   --   have h_aux {a b : F} : a = -b → -a = b := by aesop
+--   --   have h_sol := h_aux h_sol 
+--   --   rw [mul_add, ←h_sol]
+--   --   rw [Finset.sum_ite]
+--   --   conv =>
+--   --     congr 
+--   --     congr 
+--   --     congr 
+--   --     congr
+--   --     rw [Finset.sum_bij
+--   --       (t := Finset.range e)
+--   --       (g := fun a => f i * (liftF v a * ωs i ^ a))
+--   --       (by {
+--   --         rintro ⟨a, hfin⟩ ha
+--   --         exact a
+--   --       })
+--   --       (by {
+--   --         rintro ⟨a, hfin⟩ ha 
+--   --         simp
+--   --         simp at ha 
+--   --         exact ha
+--   --       })
+--   --       (by aesop)
+--   --       (by {
+--   --         intro b hb
+--   --         simp 
+--   --         exists ⟨b, by {
+--   --           aesop (add safe (by omega))
+--   --         }⟩
+--   --         simp 
+--   --         aesop
+--   --       })
+--   --       (by {
+--   --         rintro ⟨a, hfin⟩ ha
+--   --         simp [liftF, hfin ]
+--   --         ring
+--   --       })]
+--   --     rfl
+--   --     rfl 
+--   --     rfl
+--   --     rfl
+--   --   rw [Finset.mul_sum]
+--   --   rw [neg_add, add_comm]
+--   --   rw [←add_assoc]
+--   --   rw [add_neg_cancel]
+--   --   simp 
+--   --   apply Finset.sum_bij (by {
+--   --     intro a ha 
+--   --     exact a.val - e
+--   --   })
+--   --   · rintro ⟨a, ha⟩
+--   --     simp
+--   --     omega 
+--   --   · aesop (add safe (by omega))
+--   --   · intro b hb 
+--   --     exists ⟨b + e, by aesop (add safe (by omega))⟩
+--   --     aesop
+--   --   · rintro ⟨a, hfin⟩ ha 
+--   --     simp 
+--   --     simp at ha
+--   --     simp [liftF]
+--   --     aesop (add safe (by ring))
+--   -- }, 
+--   -- by simp,
+--   -- by simp,
+--   -- by simp⟩
+--   -- · simp at hk 
+--   --   subst hk
+--   --   apply solution_to_BerlekampWelch_condition₀ h_sol
 
 theorem BerlekampWelchCondition_iff_Solution {e k : ℕ} [NeZero n]
   {ωs f : Fin n → F} {v : Fin (2 * e + k) → F} 
