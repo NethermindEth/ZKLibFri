@@ -5,6 +5,8 @@ Authors: Katerina Hristova, František Silváši, Julian Sutherland
 -/
 
 import ArkLib.Data.CodingTheory.Basic
+import ArkLib.Data.CodingTheory.ProximityGap
+import ArkLib.Data.CodingTheory.ReedSolomon
 
 /-!
   Divergence of sets.
@@ -41,12 +43,23 @@ lemma possibleDeltas_subset_relHammingDistRange :
 lemma finite_possibleDeltas : (possibleDeltas U V).Finite :=
   Set.Finite.subset finite_relHammingDistRange possibleDeltas_subset_relHammingDistRange
 
-def divergence (U V : Set (ι → F)) : ℚ :=
+def divergence (U V : Set (ι → F)) : ℚ≥0 :=
   haveI : Fintype (possibleDeltas U V) := @Fintype.ofFinite _ finite_possibleDeltas
   if h : (possibleDeltas U V).Nonempty
   then (possibleDeltas U V).toFinset.max' (Set.toFinset_nonempty.2 h)
   else 0
 
-end
+/--
+Corollary 1.3 (Concentration bounds) from Proximity Gaps paper
+-/
+lemma concentration_bounds [Fintype F] [Field F] [Fintype ι] (deg : ℕ) (domain : ι ↪ F) (δ' : ℝ≥0)
+  (hδ' : (divergence AffineSubspace F (ι → F) (ReedSolomon.code domain deg) : ℝ≥0)
+    ≤  1 - (ReedSolomonCode.sqrtRate deg domain)) :
+    let δ' := (divergence AffineSubspace F (ι → F) (ReedSolomon.code domain deg) : ℝ≥0)
+    (PMF.uniformOfFintype (AffineSubspace F (ι → F))).toOuterMeasure
+    {y | Code.relHammingDistToCode y (ReedSolomon.code domain deg) ≠ δ'}
+    ≤ (proximityParams δ' deg domain) := by sorry
 
+
+end
 end DivergenceOfSets
