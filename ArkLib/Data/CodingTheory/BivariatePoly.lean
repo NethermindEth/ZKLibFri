@@ -171,45 +171,28 @@ equal to the sum of their degrees.
 lemma degreeX_mul [IsDomain F] (hf : f ≠ 0) (hg : g ≠ 0) :
   degreeX (f * g) = degreeX f + degreeX g := by
   unfold degreeX
-  let Pₙ (p : F[X][Y]) (n : ℕ) : ℕ := (f.coeff n).natDegree
+  let Pₙ (p : F[X][Y]) (n : ℕ) : ℕ := (p.coeff n).natDegree
   let Supₙ (p : F[X][Y]) := p.support.sup (Pₙ p)
   let SSetₙ (p : F[X][Y]) := {n ∈ p.support | Pₙ p n = Supₙ p}
-  have nempty {p : F[X][Y]} (h : p.support.Nonempty) : (SSetₙ p).Nonempty := by
+  have nempty {p : F[X][Y]} (h : p ≠ 0) : (SSetₙ p).Nonempty := by
     unfold Finset.Nonempty
-    convert exists_mem_eq_sup _ h (Pₙ p)
+    convert exists_mem_eq_sup _ (support_nonempty.2 h) (Pₙ p)
     aesop
-  let SSetₛ {p : F[X][Y]} (h : p ≠ 0) := SSetₙ p |>.max' (nempty (support_nonempty.2 h))
-  -- generalize h_fdegx : s₁.sup (Pₙ f) = fdegx -- Supₙ f
-  -- generalize h_gdegx : s₂.sup (Pₙ g) = gdegx -- Supₙ g
-  -- have f_support_nonempty : s₁.Nonempty :=
-  --   support_nonempty_iff.2 (by aesop (add safe forward toFinsupp_eq_zero))
-  -- have g_support_nonempty : s₂.Nonempty :=
-  --   support_nonempty_iff.2 (by aesop (add safe forward toFinsupp_eq_zero))
+  let SSetₛ {p : F[X][Y]} (h : p ≠ 0) := SSetₙ p |>.max' (nempty h)
   have pₙ_eq_Supₙ {p : F[X][Y]} (h : p ≠ 0) : Pₙ p (SSetₛ h) = Supₙ p := by
-    have h := Finset.sup_mem_of_nonempty (s := SSetₙ p) (f := id) (nempty (support_nonempty.2 h))
+    have h := Finset.sup_mem_of_nonempty (s := SSetₙ p) (f := id) (nempty h)
     simp [SSetₙ, SSetₛ] at h ⊢
     convert h.2
     rw [Finset.max'_eq_sup', sup'_eq_sup]
   have supₙ_ne_zero {p : F[X][Y]} (h : p ≠ 0) : p.coeff (SSetₛ h) ≠ 0 := fun contra ↦ by
-    have eq := Finset.sup_mem_of_nonempty (s := SSetₙ p) (f := id) (nempty (support_nonempty.2 h))
+    have eq := Finset.sup_mem_of_nonempty (s := SSetₙ p) (f := id) (nempty h)
     simp [SSetₙ, SSetₛ, ←contra, Finset.max'_eq_sup', sup'_eq_sup] at eq
     tauto
-  have h₁ : ∀ n, (f.coeff n).natDegree ≤ (f.coeff mmfx).natDegree := by
-    intros n
-    by_cases h : n ∈ f.toFinsupp.support
-    · have  : (f.toFinsupp.support.sup fun n ↦ (f.coeff n).natDegree) = (f.coeff mmfx).natDegree :=
-        by aesop
-      exact Finset.sup_le_iff.mp (le_of_eq this) n h
-    · rw [Polynomial.notMem_support_iff.mp h]
-      simp
-  have h₂ : ∀ n, (g.coeff n).natDegree ≤ (g.coeff mmgx).natDegree := by
-    intros n
-    by_cases h : n ∈ g.toFinsupp.support
-    · have : (g.toFinsupp.support.sup fun n ↦ (g.coeff n).natDegree) = (g.coeff mmgx).natDegree :=
-        by aesop
-      exact Finset.sup_le_iff.mp (le_of_eq this) n h
-    · rw [Polynomial.notMem_support_iff.mp h]
-      simp
+  have h₁ {p : F[X][Y]} {n : ℕ} (h : p ≠ 0) : Pₙ p n ≤ Pₙ p (SSetₛ h) := by
+    by_cases eq : n ∈ p.support
+    · exact Finset.sup_le_iff.mp (le_of_eq (pₙ_eq_Supₙ h).symm) n eq
+    · simp [Pₙ, Polynomial.notMem_support_iff.mp eq]
+  
   have h₁' : ∀ n, n > mmfx → (f.coeff n).natDegree < (f.coeff mmfx).natDegree ∨ f.coeff n = 0 := by
     intros n h
     by_cases h' : f.coeff n = 0
