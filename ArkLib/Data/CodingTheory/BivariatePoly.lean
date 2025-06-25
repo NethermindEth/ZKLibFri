@@ -192,183 +192,119 @@ lemma degreeX_mul [IsDomain F] (hf : f ≠ 0) (hg : g ≠ 0) :
     by_cases eq : n ∈ p.support
     · exact Finset.sup_le_iff.mp (le_of_eq (pₙ_eq_Supₙ h).symm) n eq
     · simp [Pₙ, Polynomial.notMem_support_iff.mp eq]
-  
-  have h₁' : ∀ n, n > mmfx → (f.coeff n).natDegree < (f.coeff mmfx).natDegree ∨ f.coeff n = 0 := by
-    intros n h
-    by_cases h' : f.coeff n = 0
-    · right; exact h'
-    · left
-      by_contra contra
-      simp only [not_lt] at contra
-      rcases Or.symm (Nat.eq_or_lt_of_le contra) with contra | contra
-      · rw [mmfx_def] at contra
-        have contra : fdegx < fdegx := by
-          apply lt_of_lt_of_le
-          exact contra
-          rw [←h_fdegx]
-          have := @Finset.le_sup ℕ ℕ _ _ f.toFinsupp.support (fun n ↦ (f.coeff n).natDegree)
-          apply this
-          rw [f.toFinsupp.mem_support_toFun]
-          intros h''
-          apply h'
-          rw [←Polynomial.toFinsupp_apply]
-          exact h''
-        simp at contra
-      · rw [mmfx_def] at contra
-        have : n ≤ mmfx := by
-          dsimp [mmfx]
-          apply
-            Finset.le_sup'_of_le
-              (s := {n ∈ f.toFinsupp.support | (f.coeff n).natDegree = fdegx})
-              (b := n)
-              id
-          simp only [Finset.mem_filter, Finsupp.mem_support_iff, ne_eq, contra.symm, and_true, mmfx]
-          rw [Polynomial.toFinsupp_apply]
-          exact h'
-          rfl
-        linarith
-  have h₂' : ∀ n, n > mmgx → (g.coeff n).natDegree < (g.coeff mmgx).natDegree ∨ g.coeff n = 0 := by
-    intros n h
-    by_cases h' : g.coeff n = 0
-    · right; exact h'
-    · left
-      by_contra contra
-      simp only [not_lt] at contra
-      rcases Or.symm (Nat.eq_or_lt_of_le contra) with contra | contra
-      · rw [mmgx_def] at contra
-        have contra : gdegx < gdegx := by
-          apply lt_of_lt_of_le
-          exact contra
-          rw [←h_gdegx]
-          have := @Finset.le_sup ℕ ℕ _ _ g.toFinsupp.support (fun n ↦ (g.coeff n).natDegree)
-          apply this
-          rw [g.toFinsupp.mem_support_toFun]
-          intros h''
-          apply h'
-          rw [←Polynomial.toFinsupp_apply]
-          exact h''
-        simp at contra
-      · rw [mmgx_def] at contra
-        have : n ≤ mmgx := by
-          dsimp [mmgx]
-          apply
-            Finset.le_sup'_of_le
-              (s := {n ∈ g.toFinsupp.support | (g.coeff n).natDegree = gdegx})
-              (b := n)
-              id
-          simp only [Finset.mem_filter, Finsupp.mem_support_iff, ne_eq, contra.symm, and_true, mmfx]
-          rw [Polynomial.toFinsupp_apply]
-          exact h'
-          rfl
-        linarith
-  have : (fun n ↦ ((f * g).coeff n).natDegree) =
-          (fun n ↦ (∑ x ∈ Finset.antidiagonal n, f.coeff x.1 * g.coeff x.2).natDegree) := by
+  have h₁' {p : F[X][Y]} (h : p ≠ 0) {n : ℕ} (hc : SSetₛ h < n) :
+    Pₙ p n < Pₙ p (SSetₛ h) ∨ p.coeff n = 0 :=
+    suffices p.coeff n ≠ 0 → Pₙ p n < Pₙ p (SSetₛ h) by tauto
+    fun h₂ ↦ suffices Pₙ p n ≠ Pₙ p (SSetₛ h) by have := h₁ (n := n) h; omega
+    fun h₃ ↦ by
+    simp [SSetₛ, SSetₙ] at hc
+    specialize hc _ h₂
+    rw [h₃, pₙ_eq_Supₙ h] at hc
+    omega
+  have E {p₁ p₂ : F[X][Y]}: Pₙ (p₁ * p₂) = fun n ↦ (∑ x ∈ Finset.antidiagonal n, p₁.coeff x.1 * p₂.coeff x.2).natDegree := by
     funext n
-    rw [Polynomial.coeff_mul]
-  rw [this]
-  have : (∑ x ∈ Finset.antidiagonal (mmfx + mmgx), f.coeff x.1 * g.coeff x.2).natDegree =
-            fdegx + gdegx := by
-    apply natDeg_sum_eq_of_unique (mmfx, mmgx) (by simp)
-    simp only
-    rw [Polynomial.natDegree_mul mmfx_neq_0 mmgx_neq_0, mmfx_def, mmgx_def]
-    intros y h h'
-    have : y.1 > mmfx ∨ y.2 > mmgx := by
-      have h_anti : y.1 + y.2 = mmfx + mmgx := by aesop
-      by_cases h : y.1 > mmfx
-      · left; exact h
-      · right
-        simp only [gt_iff_lt, not_lt] at h
-        rcases Or.symm (Nat.eq_or_lt_of_le h) with h'' | h''
-        · linarith
-        · rw [h''] at h_anti
-          simp only [Nat.add_left_cancel_iff] at h_anti
-          rw [←h'', ←h_anti] at h'
-          simp at h'
-    rcases this with h'' | h''
-    · specialize h₁' y.1 h''
-      rw [mmfx_def] at h₁'
-      specialize h₂ y.2
-      rw [mmgx_def] at h₂
-      rcases h₁'
-      · left
-        apply lt_of_le_of_lt
-        exact Polynomial.natDegree_mul_le
-        linarith
-      · right
-        aesop
-    · specialize h₂' y.2 h''
-      rw [mmgx_def] at h₂'
-      specialize h₁ y.1
-      rw [mmfx_def] at h₁
-      rcases h₂'
-      · left
-        apply lt_of_le_of_lt
-        exact Polynomial.natDegree_mul_le
-        linarith
-      · right
-        aesop
-  apply sup_eq_of_le_of_reach (mmfx + mmgx)
+    simp [Pₙ, Polynomial.coeff_mul]
+  have : (∑ x ∈ Finset.antidiagonal (SSetₛ hf + SSetₛ hg), f.coeff x.1 * g.coeff x.2).natDegree =
+          Supₙ f + Supₙ g := by
+    apply natDeg_sum_eq_of_unique (SSetₛ hf, SSetₛ hg) (by simp)
+    rw [Polynomial.natDegree_mul (supₙ_ne_zero hf) ((supₙ_ne_zero hg)), ←pₙ_eq_Supₙ hf, ←pₙ_eq_Supₙ hg]
+    rintro ⟨y₁, y₂⟩ h h'
+    simp [-not_and, not_and_or] at *
+    rw [←pₙ_eq_Supₙ hf, ←pₙ_eq_Supₙ hg]
+    set P₁ := f.coeff y₁ with eqP₁
+    set P₂ := g.coeff y₂ with eqP₂
+    have : SSetₛ hf < y₁ ∨ SSetₛ hg < y₂ :=
+      suffices ¬SSetₛ hf < y₁ → SSetₛ hg < y₂ by tauto
+      by simp; intros h; rcases le_iff_eq_or_lt.1 h with h | h <;> [aesop; linarith]
+    suffices P₁ ≠ 0 ∧ P₂ ≠ 0 → (P₁ * P₂).natDegree < Pₙ f (SSetₛ hf) + Pₙ g (SSetₛ hg) by tauto
+    rintro ⟨hp₁, hp₂⟩
+    apply lt_of_le_of_lt natDegree_mul_le
+    rw [show P₁.natDegree = Pₙ f y₁ by simp [*, Pₙ], show P₂.natDegree = Pₙ g y₂ by simp [*, Pₙ]]
+    rcases this with this | this
+    · have eq₁ : Pₙ f y₁ < Pₙ f (SSetₛ hf) := by have := h₁' hf this; tauto
+      have eq₂ : Pₙ g y₂ ≤ Pₙ g (SSetₛ hg) := h₁ hg
+      omega
+    · have eq₁ : Pₙ g y₂ < Pₙ g (SSetₛ hg) := by have := h₁' hg this; tauto
+      have eq₂ : Pₙ f y₁ ≤ Pₙ f (SSetₛ hf) := h₁ hf
+      omega
+  apply sup_eq_of_le_of_reach (SSetₛ hf + SSetₛ hg)
   · rw [Finsupp.mem_support_iff, Polynomial.toFinsupp_apply, Polynomial.coeff_mul]
-    by_contra h
+    intros h
     rw [h, natDegree_zero] at this
-    have fdegx_eq_0 : fdegx = 0 := by
-      have := this.symm
-      rw [Nat.add_eq_zero] at this
-      exact this.1
-    have gdegx_eq_0 : gdegx = 0 := by
-      have := this.symm
-      rw [Nat.add_eq_zero] at this
-      exact this.2
-    have : ∑ x ∈ Finset.antidiagonal (mmfx + mmgx), f.coeff x.1 * g.coeff x.2 =
-              f.coeff mmfx * g.coeff mmgx := by
-      have := @Finset.sum_eq_single (ℕ × ℕ) F[X] _ (Finset.antidiagonal (mmfx + mmgx))
-                (fun x ↦ f.coeff x.1 * g.coeff x.2) (mmfx, mmgx)
-      apply this
-      · intros b h' h''
-        have : b.1 > mmfx ∨ b.2 > mmgx := by
-          simp only [Finset.mem_antidiagonal] at h'
-          by_cases cond : b.1 > mmfx
-          · left; exact cond
-          · right
-            simp only [gt_iff_lt, not_lt] at cond
-            rcases Or.symm (Nat.eq_or_lt_of_le cond) with h'' | h'''
-            · linarith
-            · rw [h'''] at h'
-              simp only [Nat.add_left_cancel_iff] at h'
-              rw [←h''', ←h'] at h''
-              simp at h''
-        rcases this with h' | h'
-        · specialize h₁' b.1 h'
-          rw [mmfx_def, fdegx_eq_0] at h₁'
-          simp only [not_lt_zero', false_or] at h₁'
-          simp [h₁']
-        · specialize h₂' b.2 h'
-          rw [mmgx_def, gdegx_eq_0] at h₂'
-          simp only [not_lt_zero', false_or] at h₂'
-          simp [h₂']
-      · simp
-    rw [this] at h
-    have h := h.symm
-    rw [zero_eq_mul] at h
-    rcases h with h | h
-    · apply mmfx_neq_0
-      exact h
-    · apply mmgx_neq_0
-      exact h
-  · exact this
-  · intros x h
-    transitivity
-    exact Polynomial.natDegree_sum_le (Finset.antidiagonal x) (fun x ↦ f.coeff x.1 * g.coeff x.2)
-    rw [Finset.fold_max_le]
-    simp only [zero_le, Finset.mem_antidiagonal, Function.comp_apply, Prod.forall, true_and]
-    intros a b h'
-    transitivity
-    exact Polynomial.natDegree_mul_le
-    specialize h₁ a
-    rw [mmfx_def] at h₁
-    specialize h₂ b
-    rw [mmgx_def] at h₂
-    linarith
+    have e₁ : Supₙ f = 0 := by omega
+    have e₂ : Supₙ g = 0 := by omega
+    sorry
+  · rw [
+      show ((f * g).coeff (SSetₛ hf + SSetₛ hg)).natDegree = Pₙ (f * g) (SSetₛ hf + SSetₛ hg) by simp [Pₙ],
+      E
+    ]
+    exact this
+  · sorry
+
+
+
+  -- apply sup_eq_of_le_of_reach (mmfx + mmgx)
+  -- · rw [Finsupp.mem_support_iff, Polynomial.toFinsupp_apply, Polynomial.coeff_mul]
+  --   by_contra h
+  --   rw [h, natDegree_zero] at this
+  --   have fdegx_eq_0 : fdegx = 0 := by
+  --     have := this.symm
+  --     rw [Nat.add_eq_zero] at this
+  --     exact this.1
+  --   have gdegx_eq_0 : gdegx = 0 := by
+  --     have := this.symm
+  --     rw [Nat.add_eq_zero] at this
+  --     exact this.2
+  --   have : ∑ x ∈ Finset.antidiagonal (mmfx + mmgx), f.coeff x.1 * g.coeff x.2 =
+  --             f.coeff mmfx * g.coeff mmgx := by
+  --     have := @Finset.sum_eq_single (ℕ × ℕ) F[X] _ (Finset.antidiagonal (mmfx + mmgx))
+  --               (fun x ↦ f.coeff x.1 * g.coeff x.2) (mmfx, mmgx)
+  --     apply this
+  --     · intros b h' h''
+  --       have : b.1 > mmfx ∨ b.2 > mmgx := by
+  --         simp only [Finset.mem_antidiagonal] at h'
+  --         by_cases cond : b.1 > mmfx
+  --         · left; exact cond
+  --         · right
+  --           simp only [gt_iff_lt, not_lt] at cond
+  --           rcases Or.symm (Nat.eq_or_lt_of_le cond) with h'' | h'''
+  --           · linarith
+  --           · rw [h'''] at h'
+  --             simp only [Nat.add_left_cancel_iff] at h'
+  --             rw [←h''', ←h'] at h''
+  --             simp at h''
+  --       rcases this with h' | h'
+  --       · specialize h₁' b.1 h'
+  --         rw [mmfx_def, fdegx_eq_0] at h₁'
+  --         simp only [not_lt_zero', false_or] at h₁'
+  --         simp [h₁']
+  --       · specialize h₂' b.2 h'
+  --         rw [mmgx_def, gdegx_eq_0] at h₂'
+  --         simp only [not_lt_zero', false_or] at h₂'
+  --         simp [h₂']
+  --     · simp
+  --   rw [this] at h
+  --   have h := h.symm
+  --   rw [zero_eq_mul] at h
+  --   rcases h with h | h
+  --   · apply mmfx_neq_0
+  --     exact h
+  --   · apply mmgx_neq_0
+  --     exact h
+  -- · exact this
+  -- · intros x h
+  --   transitivity
+  --   exact Polynomial.natDegree_sum_le (Finset.antidiagonal x) (fun x ↦ f.coeff x.1 * g.coeff x.2)
+  --   rw [Finset.fold_max_le]
+  --   simp only [zero_le, Finset.mem_antidiagonal, Function.comp_apply, Prod.forall, true_and]
+  --   intros a b h'
+  --   transitivity
+  --   exact Polynomial.natDegree_mul_le
+  --   specialize h₁ a
+  --   rw [mmfx_def] at h₁
+  --   specialize h₂ b
+  --   rw [mmgx_def] at h₂
+  --   linarith
 
 /--
 The evaluation at a point of a bivariate polynomial in the first variable `X`.
