@@ -171,67 +171,29 @@ equal to the sum of their degrees.
 lemma degreeX_mul [IsDomain F] (hf : f ≠ 0) (hg : g ≠ 0) :
   degreeX (f * g) = degreeX f + degreeX g := by
   unfold degreeX
-  -- set s₁ := f.support with eq₁
-  -- set s₂ := g.support with eq₂
   let Pₙ (p : F[X][Y]) (n : ℕ) : ℕ := (f.coeff n).natDegree
   let Supₙ (p : F[X][Y]) := p.support.sup (Pₙ p)
+  let SSetₙ (p : F[X][Y]) := {n ∈ p.support | Pₙ p n = Supₙ p}
+  have nempty {p : F[X][Y]} (h : p.support.Nonempty) : (SSetₙ p).Nonempty := by
+    unfold Finset.Nonempty
+    convert exists_mem_eq_sup _ h (Pₙ p)
+    aesop
+  let SSetₛ {p : F[X][Y]} (h : p ≠ 0) := SSetₙ p |>.max' (nempty (support_nonempty.2 h))
   -- generalize h_fdegx : s₁.sup (Pₙ f) = fdegx -- Supₙ f
   -- generalize h_gdegx : s₂.sup (Pₙ g) = gdegx -- Supₙ g
   -- have f_support_nonempty : s₁.Nonempty :=
   --   support_nonempty_iff.2 (by aesop (add safe forward toFinsupp_eq_zero))
   -- have g_support_nonempty : s₂.Nonempty :=
   --   support_nonempty_iff.2 (by aesop (add safe forward toFinsupp_eq_zero))
-  have f_mdeg_nonempty : {n ∈ s₁ | Pₙ f n = fdegx}.Nonempty := by
-    unfold Finset.Nonempty
-    convert exists_mem_eq_sup _ f_support_nonempty (Pₙ f)
-    aesop
-  have g_mdeg_nonempty : {n ∈ s₂ | Pₙ g n = gdegx}.Nonempty := by
-    unfold Finset.Nonempty
-    convert exists_mem_eq_sup _ g_support_nonempty (Pₙ g)
-    aesop
-  set mmfx := {n ∈ s₁ | Pₙ f n = fdegx}.max' f_mdeg_nonempty with eqm₁
-  set mmgx := {n ∈ s₂ | Pₙ g n = gdegx}.max' g_mdeg_nonempty with eqm₂
-  have mmfx_def : Pₙ f mmfx = fdegx := by
-    have h := Finset.sup_mem_of_nonempty (s := {n ∈ s₁ | Pₙ f n = fdegx}) (f := id) f_mdeg_nonempty
-    simp at h
+  have pₙ_eq_Supₙ {p : F[X][Y]} (h : p ≠ 0) : Pₙ p (SSetₛ h) = Supₙ p := by
+    have h := Finset.sup_mem_of_nonempty (s := SSetₙ p) (f := id) (nempty (support_nonempty.2 h))
+    simp [SSetₙ, SSetₛ] at h ⊢
     convert h.2
-    rw [eqm₁, Finset.max'_eq_sup', sup'_eq_sup]  
-
-  have mmgx_def : Pₙ f mmgx = gdegx := by
-    have h := Finset.sup_mem_of_nonempty (s := {n ∈ s₂ | Pₙ f n = gdegx}) (f := id) g_mdeg_nonempty
-    simp at h
-    convert h.2
-    rw [eqm₂, Finset.max'_eq_sup', sup'_eq_sup]       
-  have mmfx_neq_0 : f.coeff mmfx ≠ 0 := by
-    rw [←Polynomial.toFinsupp_apply, ←Finsupp.mem_support_iff, f.toFinsupp.mem_support_toFun]
-    dsimp [mmfx]
-    generalize h :
-      {n ∈ f.toFinsupp.support | (f.coeff n).natDegree = fdegx}.sup' f_mdeg_nonempty id = i
-    rw [Finset.sup'_eq_sup] at h
-    rcases
-      Finset.exists_mem_eq_sup
-        {n ∈ f.toFinsupp.support | (f.coeff n).natDegree = fdegx} f_mdeg_nonempty id
-      with ⟨n, h'⟩
-    rw [h'.2] at h
-    simp only [id_eq, mmfx] at h
-    rw [h] at h'
-    simp only [Finset.mem_filter, Finsupp.mem_support_iff, ne_eq, id_eq, mmfx] at h'
-    exact h'.1.1
-  have mmgx_neq_0 : g.coeff mmgx ≠ 0 := by
-    rw [←Polynomial.toFinsupp_apply, ←Finsupp.mem_support_iff, g.toFinsupp.mem_support_toFun]
-    dsimp [mmgx]
-    generalize h :
-      {n ∈ g.toFinsupp.support | (g.coeff n).natDegree = gdegx}.sup' g_mdeg_nonempty id = i
-    rw [Finset.sup'_eq_sup] at h
-    rcases
-      Finset.exists_mem_eq_sup
-        {n ∈ g.toFinsupp.support | (g.coeff n).natDegree = gdegx} g_mdeg_nonempty id
-      with ⟨n, h'⟩
-    rw [h'.2] at h
-    simp only [id_eq, mmfx] at h
-    rw [h] at h'
-    simp only [Finset.mem_filter, Finsupp.mem_support_iff, ne_eq, id_eq, mmgx] at h'
-    exact h'.1.1
+    rw [Finset.max'_eq_sup', sup'_eq_sup]
+  have supₙ_ne_zero {p : F[X][Y]} (h : p ≠ 0) : p.coeff (SSetₛ h) ≠ 0 := fun contra ↦ by
+    have eq := Finset.sup_mem_of_nonempty (s := SSetₙ p) (f := id) (nempty (support_nonempty.2 h))
+    simp [SSetₙ, SSetₛ, ←contra, Finset.max'_eq_sup', sup'_eq_sup] at eq
+    tauto
   have h₁ : ∀ n, (f.coeff n).natDegree ≤ (f.coeff mmfx).natDegree := by
     intros n
     by_cases h : n ∈ f.toFinsupp.support
