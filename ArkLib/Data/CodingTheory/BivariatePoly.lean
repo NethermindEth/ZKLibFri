@@ -7,7 +7,6 @@ Authors: Katerina Hristova, František Silváši, Julian Sutherland
 import Mathlib.Algebra.Polynomial.Eval.Defs
 import Mathlib.Algebra.Polynomial.Bivariate
 import Mathlib.Data.Fintype.Defs
-import Mathlib.Tactic.ComputeDegree
 
 open Classical
 open Polynomial
