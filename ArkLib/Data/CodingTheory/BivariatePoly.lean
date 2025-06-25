@@ -231,80 +231,53 @@ lemma degreeX_mul [IsDomain F] (hf : f ≠ 0) (hg : g ≠ 0) :
   · rw [Finsupp.mem_support_iff, Polynomial.toFinsupp_apply, Polynomial.coeff_mul]
     intros h
     rw [h, natDegree_zero] at this
-    have e₁ : Supₙ f = 0 := by omega
-    have e₂ : Supₙ g = 0 := by omega
-    sorry
+    have : ∑ x ∈ Finset.antidiagonal (SSetₛ hf + SSetₛ hg), f.coeff x.1 * g.coeff x.2 =
+           f.coeff (SSetₛ hf) * g.coeff (SSetₛ hg) := by
+      apply Finset.sum_eq_single (f := fun x ↦ f.coeff x.1 * g.coeff x.2)
+                                 (SSetₛ hf, SSetₛ hg)
+                                 (h₁ := by simp)
+      simp [-not_and, not_and_or]
+      rintro y₁ y₂ h' h''
+      have : SSetₛ hf < y₁ ∨ SSetₛ hg < y₂ :=
+        suffices ¬SSetₛ hf < y₁ → SSetₛ hg < y₂ by tauto
+        by simp; intros h; rcases le_iff_eq_or_lt.1 h with h | h <;> [simp_all; linarith]
+      rcases this with this | this
+      · have := h₁' hf this
+        rw [pₙ_eq_Supₙ hf] at this
+        simp [show Supₙ f = 0 by omega] at this
+        tauto
+      · have := h₁' hg this
+        rw [pₙ_eq_Supₙ hg] at this
+        simp [show Supₙ g = 0 by omega] at this
+        tauto
+    rw [this] at h
+    aesop (add safe (by omega))
   · rw [
       show ((f * g).coeff (SSetₛ hf + SSetₛ hg)).natDegree = Pₙ (f * g) (SSetₛ hf + SSetₛ hg) by simp [Pₙ],
       E
     ]
     exact this
-  · sorry
-
-
-
-  -- apply sup_eq_of_le_of_reach (mmfx + mmgx)
-  -- · rw [Finsupp.mem_support_iff, Polynomial.toFinsupp_apply, Polynomial.coeff_mul]
-  --   by_contra h
-  --   rw [h, natDegree_zero] at this
-  --   have fdegx_eq_0 : fdegx = 0 := by
-  --     have := this.symm
-  --     rw [Nat.add_eq_zero] at this
-  --     exact this.1
-  --   have gdegx_eq_0 : gdegx = 0 := by
-  --     have := this.symm
-  --     rw [Nat.add_eq_zero] at this
-  --     exact this.2
-  --   have : ∑ x ∈ Finset.antidiagonal (mmfx + mmgx), f.coeff x.1 * g.coeff x.2 =
-  --             f.coeff mmfx * g.coeff mmgx := by
-  --     have := @Finset.sum_eq_single (ℕ × ℕ) F[X] _ (Finset.antidiagonal (mmfx + mmgx))
-  --               (fun x ↦ f.coeff x.1 * g.coeff x.2) (mmfx, mmgx)
-  --     apply this
-  --     · intros b h' h''
-  --       have : b.1 > mmfx ∨ b.2 > mmgx := by
-  --         simp only [Finset.mem_antidiagonal] at h'
-  --         by_cases cond : b.1 > mmfx
-  --         · left; exact cond
-  --         · right
-  --           simp only [gt_iff_lt, not_lt] at cond
-  --           rcases Or.symm (Nat.eq_or_lt_of_le cond) with h'' | h'''
-  --           · linarith
-  --           · rw [h'''] at h'
-  --             simp only [Nat.add_left_cancel_iff] at h'
-  --             rw [←h''', ←h'] at h''
-  --             simp at h''
-  --       rcases this with h' | h'
-  --       · specialize h₁' b.1 h'
-  --         rw [mmfx_def, fdegx_eq_0] at h₁'
-  --         simp only [not_lt_zero', false_or] at h₁'
-  --         simp [h₁']
-  --       · specialize h₂' b.2 h'
-  --         rw [mmgx_def, gdegx_eq_0] at h₂'
-  --         simp only [not_lt_zero', false_or] at h₂'
-  --         simp [h₂']
-  --     · simp
-  --   rw [this] at h
-  --   have h := h.symm
-  --   rw [zero_eq_mul] at h
-  --   rcases h with h | h
-  --   · apply mmfx_neq_0
-  --     exact h
-  --   · apply mmgx_neq_0
-  --     exact h
-  -- · exact this
-  -- · intros x h
-  --   transitivity
-  --   exact Polynomial.natDegree_sum_le (Finset.antidiagonal x) (fun x ↦ f.coeff x.1 * g.coeff x.2)
-  --   rw [Finset.fold_max_le]
-  --   simp only [zero_le, Finset.mem_antidiagonal, Function.comp_apply, Prod.forall, true_and]
-  --   intros a b h'
-  --   transitivity
-  --   exact Polynomial.natDegree_mul_le
-  --   specialize h₁ a
-  --   rw [mmfx_def] at h₁
-  --   specialize h₂ b
-  --   rw [mmgx_def] at h₂
-  --   linarith
+  · intros x h
+    rw [
+      show ((f * g).coeff x).natDegree = Pₙ (f * g) x by simp [Pₙ],
+      E
+    ]
+    transitivity
+    exact Polynomial.natDegree_sum_le (Finset.antidiagonal x) (fun x ↦ f.coeff x.1 * g.coeff x.2)
+    rw [Finset.fold_max_le]
+    simp only [zero_le, Finset.mem_antidiagonal, Function.comp_apply, Prod.forall, true_and]
+    intros a b h'
+    transitivity
+    exact Polynomial.natDegree_mul_le
+    simp_rw [pₙ_eq_Supₙ] at h₁
+    simp at h
+    have e₁ := h₁ (p := f) (n := a) hf
+    have e₂ := h₁ (p := g) (n := b) hg
+    rw [show (f.toFinsupp.support.sup fun n ↦ (f.coeff n).natDegree) = Supₙ f by rfl]
+    rw [show (g.toFinsupp.support.sup fun n ↦ (g.coeff n).natDegree) = Supₙ g by rfl]
+    rw [show (f.coeff a).natDegree = Pₙ f a by rfl]
+    rw [show (g.coeff b).natDegree = Pₙ g b by rfl]
+    linarith
 
 /--
 The evaluation at a point of a bivariate polynomial in the first variable `X`.
