@@ -1,13 +1,14 @@
 /-
 Copyright (c) 2024 ArkLib Contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Quang Dao, Katerina Hristova, František Silváši, Julian Sutherland, Ilia Vlasov
+Authors: Quang Dao, Katerina Hristova, František Silváši, Julian Sutherland, Ilia Vlasov,
+Mirco Richter
 -/
 
 import ArkLib.Data.CodingTheory.Basic
 import Mathlib.LinearAlgebra.Lagrange
 import Mathlib.RingTheory.Henselian
-import ArkLib.Data.Fin.Basic
+import ArkLib.Data.Fin.Lift
 import ArkLib.Data.MvPolynomial.LinearMvExtension
 import ArkLib.Data.Polynomial.Interface
 
@@ -51,10 +52,11 @@ def checkMatrix (deg : ℕ) [Fintype ι] : Matrix (Fin (Fintype.card ι - deg)) 
 --   simp [codeByGenMatrix, code]
 --   rw [LinearMap.range_eq_map]
 --   sorry
-
+end ReedSolomon
 open Classical
 open Polynomial
 open Matrix
+open Code LinearCode
 
 variable {F ι ι' : Type*}
          {C : Set (ι → F)}
@@ -235,8 +237,9 @@ lemma rateOfLinearCode_eq_div [NeZero n] (inj : Function.Injective α) (h : n �
   rwa [rate, dim_eq_deg_of_le, length_eq_domain_size]
 
 @[simp]
-lemma dist_le_length (inj : Function.Injective α) : minDist (ReedSolomon.code ⟨α, inj⟩ n) ≤ m := by
-  convert minDist_UB
+lemma dist_le_length (inj : Function.Injective α) :
+    minDist ((ReedSolomon.code ⟨α, inj⟩ n) : Set (Fin m → F)) ≤ m := by
+  convert dist_UB
   simp
 
 end
@@ -287,7 +290,7 @@ open Finset in
   The minimal code distance of an RS code of length `ι` and dimension `deg` is `ι - deg + 1`
 -/
 theorem minDist [Field F] (inj : Function.Injective α) [NeZero n] (h : n ≤ m) :
-  minDist (ReedSolomon.code ⟨α, inj⟩ n) = m - n + 1 := by
+  minDist ((ReedSolomon.code ⟨α, inj⟩ n) : Set (Fin m → F)) = m - n + 1 := by
   have : NeZero m := by constructor; aesop
   refine le_antisymm ?p₁ ?p₂
   case p₁ =>
@@ -297,7 +300,7 @@ theorem minDist [Field F] (inj : Function.Injective α) [NeZero n] (h : n ≤ m)
     zify [dist_le_length] at distUB
     omega
   case p₂ =>
-    rw [minDist_eq_minWtCodewords]
+    rw [dist_eq_minWtCodewords]
     apply le_csInf (by use m, constantCode 1 _; simp)
     intro b ⟨msg, ⟨p, p_deg, p_eval_on_α_eq_msg⟩, msg_neq_0, wt_c_eq_b⟩
     let zeroes : Finset _ := {i | msg i = 0}
@@ -338,18 +341,18 @@ private noncomputable def interpolate : (ι → F) →ₗ[F] F[X] :=
   Lagrange.interpolate univ domain
 
 /-- The linear map that maps a ReedSolomon codeword to its associated polynomial -/
-noncomputable def decode : (code domain deg) →ₗ[F] F[X] :=
+noncomputable def decode : (ReedSolomon.code domain deg) →ₗ[F] F[X] :=
   domRestrict
     (interpolate (domain := domain))
-    (code domain deg)
+    (ReedSolomon.code domain deg)
 
 /- ReedSolomon codewords are decoded into degree < deg polynomials-/
-lemma decoded_polynomial_lt_deg (c : code domain deg) :
+lemma decoded_polynomial_lt_deg (c : ReedSolomon.code domain deg) :
   decode c ∈ (degreeLT F deg : Submodule F F[X]) := by sorry
 
 /-- The linear map that maps a Reed Solomon codeword to its associated polynomial
     of degree < deg -/
-noncomputable def decodeLT : (code domain deg) →ₗ[F] (Polynomial.degreeLT F deg) :=
+noncomputable def decodeLT : (ReedSolomon.code domain deg) →ₗ[F] (Polynomial.degreeLT F deg) :=
   codRestrict
     (Polynomial.degreeLT F deg)
     decode
@@ -385,7 +388,7 @@ variable  {F : Type*} [Field F] [DecidableEq F]
   their decoded univariate polynomials are of degree < 2ᵐ for some m ∈ ℕ. -/
 def smoothCode
   (domain : ι ↪ F) [Smooth domain]
-  (m : ℕ): Submodule F (ι → F) := code domain (2^m)
+  (m : ℕ): Submodule F (ι → F) := ReedSolomon.code domain (2^m)
 
 /-- The linear map that maps Smooth Reed Solomon Code words
     to their decoded degree wise linear `m`-variate polynomial  -/
@@ -431,5 +434,3 @@ def multiConstrainedCode
         ∀ i : Fin t, weightConstraint (mVdecode (⟨f, h⟩ : smoothCode domain m)) (w i) (σ i)}
 
 end
-
-end ReedSolomon
