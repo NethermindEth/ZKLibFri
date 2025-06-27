@@ -1,13 +1,17 @@
-import Mathlib
-import Auto
-import Smt
+-- import Mathlib
+-- import Auto
+-- import Smt
 
+-- import Mathlib.Probability.Distributions.Uniform
+-- import Mathlib.Data.Real.Basic
+-- import Mathlib.Data.Real.Sqrt
+-- import Mathlib.LinearAlgebra.AffineSpace.AffineSubspace.Defs
+-- import Mathlib.Data.Finset.BooleanAlgebra
+-- import Mathlib
+
+import Mathlib.Algebra.Lie.OfAssociative
 import Mathlib.Probability.Distributions.Uniform
-import Mathlib.Data.Real.Basic
-import Mathlib.Data.Real.Sqrt
-import Mathlib.LinearAlgebra.AffineSpace.AffineSubspace.Defs
-import Mathlib.Data.Finset.BooleanAlgebra
-import Mathlib
+import Mathlib.RingTheory.Henselian
 
 /-!
   # Definitions and Theorems about Proximity Gaps
@@ -305,3 +309,5 @@ end
 
 
 -- def main : IO Unit := pure ()
+
+#min_imports
