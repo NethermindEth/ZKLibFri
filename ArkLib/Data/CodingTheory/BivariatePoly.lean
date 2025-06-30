@@ -617,11 +617,132 @@ lemma monomial_xy_degree (n m : ℕ) (a : F) (ha : a ≠ 0) :
     ] <;> simp [ha]
 
 
-theorem totalDegree_prod (hf : f ≠ 0) (hg : g ≠ 0) :
+theorem totalDegree_prod [IsDomain F] (hf : f ≠ 0) (hg : g ≠ 0) :
     totalDegree (f * g) = totalDegree f + totalDegree g := by
   unfold totalDegree
-  rw [@mul_eq_sum_sum]
-  sorry
+  -- We'll find the maximum total degree terms in f and g
+  -- and show that their product achieves the sum of total degrees
+  have f_support_nonempty : f.support.Nonempty := by
+    rw [Polynomial.support_nonempty_iff]
+    exact hf
+  have g_support_nonempty : g.support.Nonempty := by
+    rw [Polynomial.support_nonempty_iff]
+    exact hg
+  -- Get the terms that achieve maximum total degree
+  obtain ⟨mf, hmf_mem, hmf_max⟩ := f.support.exists_mem_eq_sup f_support_nonempty 
+    (fun m => m + (f.coeff m).natDegree)
+  obtain ⟨mg, hmg_mem, hmg_max⟩ := g.support.exists_mem_eq_sup g_support_nonempty 
+    (fun m => m + (g.coeff m).natDegree)
+  -- The key is showing that (mf + mg) achieves the maximum in the product
+  have coeff_mf_ne_zero : f.coeff mf ≠ 0 := by
+    rw [←Polynomial.mem_support_iff]
+    exact hmf_mem
+  have coeff_mg_ne_zero : g.coeff mg ≠ 0 := by
+    rw [←Polynomial.mem_support_iff]
+    exact hmg_mem
+  -- Show the upper bound
+  have upper_bound : totalDegree (f * g) ≤ totalDegree f + totalDegree g := by
+    rw [←hmf_max, ←hmg_max]
+    apply Finset.sup_le
+    intros n hn
+    rw [Polynomial.mem_support_iff, Polynomial.coeff_mul] at hn
+    have : ∃ p ∈ Finset.antidiagonal n, f.coeff p.1 * g.coeff p.2 ≠ 0 := by
+      by_contra h
+      push_neg at h
+      have : ∑ p ∈ Finset.antidiagonal n, f.coeff p.1 * g.coeff p.2 = 0 := by
+        apply Finset.sum_eq_zero
+        intros p hp
+        exact h p hp
+      rw [this] at hn
+      exact hn rfl
+    obtain ⟨⟨i, j⟩, hij, h_ne_zero⟩ := this
+    simp only [Finset.mem_antidiagonal] at hij
+    rw [←hij]
+    have h_prod_ne_zero : f.coeff i * g.coeff j ≠ 0 := h_ne_zero
+    have fi_ne_zero : f.coeff i ≠ 0 := left_ne_zero_of_mul h_prod_ne_zero
+    have gj_ne_zero : g.coeff j ≠ 0 := right_ne_zero_of_mul h_prod_ne_zero
+    calc (i + j) + ((f * g).coeff (i + j)).natDegree
+        ≤ (i + j) + (∑ p ∈ Finset.antidiagonal (i + j), f.coeff p.1 * g.coeff p.2).natDegree := by
+          congr 1
+          rw [Polynomial.coeff_mul]
+        _ ≤ (i + j) + (f.coeff i * g.coeff j).natDegree := by
+          apply Nat.add_le_add_left
+          apply Polynomial.natDegree_sum_le_of_forall_le
+          intros p hp
+          by_cases h : p = (i, j)
+          · rw [h]
+          · apply Nat.le_refl
+        _ ≤ (i + j) + ((f.coeff i).natDegree + (g.coeff j).natDegree) := by
+          apply Nat.add_le_add_left
+          exact Polynomial.natDegree_mul_le
+        _ = (i + (f.coeff i).natDegree) + (j + (g.coeff j).natDegree) := by ring
+        _ ≤ mf + (f.coeff mf).natDegree + (mg + (g.coeff mg).natDegree) := by
+          apply Nat.add_le_add
+          · have : i ∈ f.support := by
+              rw [Polynomial.mem_support_iff]
+              exact fi_ne_zero
+            exact Finset.le_sup this
+          · have : j ∈ g.support := by
+              rw [Polynomial.mem_support_iff]
+              exact gj_ne_zero
+            exact Finset.le_sup this
+  -- Show the lower bound by constructing the term that achieves it
+  have lower_bound : totalDegree f + totalDegree g ≤ totalDegree (f * g) := by
+    rw [←hmf_max, ←hmg_max]
+    have h_prod_coeff : ((f * g).coeff (mf + mg)).natDegree = 
+        (f.coeff mf).natDegree + (g.coeff mg).natDegree := by
+      rw [Polynomial.coeff_mul]
+      apply natDeg_sum_eq_of_unique (mf, mg) (by simp)
+      · exact Polynomial.natDegree_mul coeff_mf_ne_zero coeff_mg_ne_zero
+      · intros ⟨i, j⟩ h_mem h_ne
+        simp only [Finset.mem_antidiagonal] at h_mem
+        by_cases h : f.coeff i * g.coeff j = 0
+        · right; exact h
+        · left
+          have fi_ne_zero : f.coeff i ≠ 0 := left_ne_zero_of_mul h
+          have gj_ne_zero : g.coeff j ≠ 0 := right_ne_zero_of_mul h
+          have i_in_support : i ∈ f.support := by
+            rw [Polynomial.mem_support_iff]
+            exact fi_ne_zero
+          have j_in_support : j ∈ g.support := by
+            rw [Polynomial.mem_support_iff]
+            exact gj_ne_zero
+          -- We know i + j = mf + mg but (i,j) ≠ (mf, mg)
+          have h_sum : i + j = mf + mg := h_mem
+          -- By maximality of mf and mg's total degrees
+          have h_i : i + (f.coeff i).natDegree ≤ mf + (f.coeff mf).natDegree := 
+            Finset.le_sup i_in_support
+          have h_j : j + (g.coeff j).natDegree ≤ mg + (g.coeff mg).natDegree := 
+            Finset.le_sup j_in_support
+          -- Adding these inequalities
+          have : i + (f.coeff i).natDegree + j + (g.coeff j).natDegree ≤ 
+              mf + (f.coeff mf).natDegree + mg + (g.coeff mg).natDegree := by
+            linarith
+          -- Rearranging using h_sum
+          rw [h_sum] at this
+          have : (f.coeff i).natDegree + (g.coeff j).natDegree < 
+              (f.coeff mf).natDegree + (g.coeff mg).natDegree := by
+            linarith
+          exact this
+    calc mf + (f.coeff mf).natDegree + (mg + (g.coeff mg).natDegree)
+        = (mf + mg) + ((f.coeff mf).natDegree + (g.coeff mg).natDegree) := by ring
+        _ = (mf + mg) + ((f * g).coeff (mf + mg)).natDegree := by rw [←h_prod_coeff]
+        _ ≤ totalDegree (f * g) := by
+          apply Finset.le_sup
+          rw [Polynomial.mem_support_iff, Polynomial.coeff_mul]
+          intro h
+          have : f.coeff mf * g.coeff mg = 0 := by
+            by_contra h_ne_zero
+            have : (mf, mg) ∈ Finset.antidiagonal (mf + mg) := by simp
+            have : f.coeff mf * g.coeff mg ∈ 
+                (Finset.antidiagonal (mf + mg)).image (fun p => f.coeff p.1 * g.coeff p.2) := by
+              exact Finset.mem_image_of_mem _ this
+            rw [←Finset.sum_eq_zero_iff_of_nonneg] at h
+            exact h_ne_zero (h _ this)
+            intros; apply zero_le
+          exact absurd this (mul_ne_zero coeff_mf_ne_zero coeff_mg_ne_zero)
+  -- Combine upper and lower bounds
+  exact le_antisymm upper_bound lower_bound
 
 
 end
