@@ -24,8 +24,6 @@ import ArkLib.Data.CodingTheory.JohnsonBound.Choose2
 import ArkLib.Data.CodingTheory.JohnsonBound.Expectations
 import ArkLib.Data.CodingTheory.JohnsonBound.Lemmas
 import ArkLib.Data.CodingTheory.ListDecodability
-import ArkLib.Data.CodingTheory.PolishchukSpielman
-import ArkLib.Data.CodingTheory.Prelims
 import ArkLib.Data.CodingTheory.ProximityGap
 import ArkLib.Data.CodingTheory.ReedMuller
 import ArkLib.Data.CodingTheory.ReedSolomon
@@ -60,7 +58,6 @@ import ArkLib.Data.MvPolynomial.LinearMvExtension
 import ArkLib.Data.MvPolynomial.Multilinear
 import ArkLib.Data.MvPolynomial.Notation
 import ArkLib.Data.MvPolynomial.Sumcheck
-import ArkLib.Data.Polynomial.Bivariate
 import ArkLib.Data.Polynomial.EvenAndOdd
 import ArkLib.Data.Polynomial.Interface
 import ArkLib.Data.Probability.Instances
