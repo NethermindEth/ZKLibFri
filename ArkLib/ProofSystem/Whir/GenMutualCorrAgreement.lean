@@ -41,6 +41,14 @@ noncomputable def genMutualCorrAgreement
     ∀ (f : Gen.parℓ → ι → F) (δ : ℝ≥0) (_hδ : δ < 1 - (Gen.B Gen.C Gen.parℓ)),
     Pr_{let r ←$ᵖ F}[ (proximityCondition f δ Gen.Fun Gen.C) r ] ≤ errStar δ
 
+def FALSEPROP : Prop := ∀ (Gen : ProximityGenerator ι F) [Fintype Gen.parℓ]
+  (BStar : ℝ) (errStar : ℝ → ENNReal)
+  (C : Set (ι → F)) (hC : C = Gen.C)
+  (h: genMutualCorrAgreement Gen BStar errStar),
+    BStar < min (1 - (δᵣ C) / 2 : ℝ) (Gen.B Gen.C Gen.parℓ)
+    ∧
+    errStar = Gen.err Gen.C Gen.parℓ
+
 /-- Lemma 4.10
   Let `C` be a linear code with minimum distance `δ_C`, `Gen` be a proximity generator for C
   with parameters `B` and `err`, then Gen has mutual correlated agreement with proximity bounds
@@ -53,6 +61,47 @@ lemma genMutualCorrAgreement_le_bound
     BStar < min (1 - (δᵣ C) / 2 : ℝ) (Gen.B Gen.C Gen.parℓ)
     ∧
     errStar = Gen.err Gen.C Gen.parℓ := by sorry
+
+lemma genMutualCorrAgreement_le_bound_NOOOPE : ¬FALSEPROP (F:= F) (ι := ι) := by
+  unfold FALSEPROP
+  simp
+  unfold genMutualCorrAgreement proximityCondition
+  simp
+  let Gen : ProximityGenerator ι F := {
+    C := 0
+    parℓ := Fin 0
+    hℓ := inferInstance
+    Fun := fun _ _ ↦ 42
+    B := fun _ _ ↦ 1
+    err := fun _ _ _ ↦ 0
+    proximity := by
+      introv h₁ h₂
+      simp at h₁
+      rcases δ
+      simp at h₁
+      linarith
+  }
+  use Gen
+  let parℓ : Fintype Gen.parℓ := inferInstance
+  use parℓ
+  set BStar : ℝ := 1 - ↑(δᵣ ((Gen.C) : Set (ι → F))) / 2 with eq
+  use BStar
+  let errStar : ℝ → ENNReal := fun _ ↦ 0
+  use errStar
+  simp [eq]
+  introv h₁ h₂ h₃
+  set X := ((Subtype.val (α := (Prop → ENNReal)) _)) with eq
+  set X' := X True
+  use ENNReal.toNNReal X'
+  simp
+  simp [X', X]
+  simp [Gen] at *
+  rcases δ
+  simp at h₁
+  linarith
+
+example : False := absurd (genMutualCorrAgreement_le_bound (ι := ι))
+                          (genMutualCorrAgreement_le_bound_NOOOPE (F := F) (ι := ι))
 
 /-- Corollary 4.11
   Let `C` be a (smooth) ReedSolomon Code with rate `ρ`, then the function
