@@ -240,9 +240,11 @@ theorem thing₄' {F : Type*} [Field F] [Fintype F] [DecidableEq F] {k : ℕ}
 --   infer_instance
 
 noncomputable def thing₃' {F : Type*} [Field F] [Fintype F] [DecidableEq F] {k : ℕ}
-  (u : Fin k → ι → F) : Fintype ↥(affineSpan F (setVectorsU u)) := by
+  {u : Fin k → ι → F} : Fintype ↥(affineSpan F (setVectorsU u)) := by
   apply Fintype.ofFinite
 
+noncomputable def nonempty {F : Type*} [Field F] [Fintype F] [DecidableEq F] {k : ℕ}
+  {u : Fin k → ι → F} : Nonempty ↥(affineSpan F (setVectorsU u)) := sorry
 
 -- noncomputable def thing₃ {α P V : Type*} [Fintype α] [AddCommGroup V]
 --                                          [Ring α] [Module α V] [Fintype P] {s : Finset P}
@@ -254,7 +256,7 @@ theorem correlatedAgreement_affine_spaces [Fintype ι] [Field F] [Fintype F]
   [DecidableEq F] [Nonempty F] [Nonempty ι]
   {k : ℕ} (u : Fin k → ι → F) (δ : ℝ≥0) (deg : ℕ) (domain : ι ↪ F)
   (hδ : δ ≤ 1 - (ReedSolomonCode.sqrtRate deg domain))
-  (hproximity : (PMF.uniformOfFintype (affineSpan F (setVectorsU u))).toOuterMeasure
+  (hproximity : (@PMF.uniformOfFintype (affineSpan F (setVectorsU u)) thing₃' nonempty).toOuterMeasure
   {y | Code.relHammingDistToCode y (ReedSolomon.code domain deg) ≤ δ}
   > proximityParams δ deg domain) :
  correlatedAgreement (ReedSolomon.code domain deg) δ u := by sorry
