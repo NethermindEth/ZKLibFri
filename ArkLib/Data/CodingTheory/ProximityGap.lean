@@ -257,7 +257,7 @@ theorem correlatedAgreement_affine_spaces [Fintype ι] [Field F] [Fintype F]
   {k : ℕ} (u : Fin k → ι → F) (δ : ℝ≥0) (deg : ℕ) (domain : ι ↪ F)
   (hδ : δ ≤ 1 - (ReedSolomonCode.sqrtRate deg domain))
   (hproximity : (@PMF.uniformOfFintype (affineSpan F (setVectorsU u)) thing₃' nonempty).toOuterMeasure
-  {y | Code.relHammingDistToCode y (ReedSolomon.code domain deg) ≤ δ}
+  {y | Code.relHammingDistToCode (ι := ι) (F := F) y (ReedSolomon.code domain deg) ≤ δ}
   > proximityParams δ deg domain) :
  correlatedAgreement (ReedSolomon.code domain deg) δ u := by sorry
 
