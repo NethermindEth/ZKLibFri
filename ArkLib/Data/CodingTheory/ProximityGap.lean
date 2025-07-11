@@ -5,6 +5,7 @@ import Mathlib.Data.Real.Basic
 import Mathlib.Data.Real.Sqrt
 import Mathlib.LinearAlgebra.AffineSpace.AffineSubspace.Defs
 import Mathlib.Data.Finset.BooleanAlgebra
+import Mathlib.Data.Set.Defs
 
 
 /-!
@@ -166,69 +167,19 @@ theorem correlatedAgreement_affine_curves [Fintype ι] [Nonempty ι] [Field F] [
     > l*(proximityParams δ deg domain)):
   correlatedAgreement (ReedSolomon.code domain deg) δ u := by sorry
 
-#check Set.range
-#check affineSpan
-/--
-Theorem 1.6 (Correlated agreement over affine spaces) in Proximity Gaps
---- how do I represent `u` as a set?
--/
-theorem correlatedAgreement_affine_spaces [Fintype ι] [Nonempty ι] [Field F] [Fintype F]
-{l : ℕ} (u : Fin (l+1) → ι → F) (δ : ℝ≥0) (deg : ℕ) (domain : ι ↪ F)
-(hδ : δ ≤ 1 - (ReedSolomonCode.sqrtRate deg domain))
-(hproximity : (PMF.uniformOfFintype (affineSpan F (Set.range u))).toOuterMeasure
-    {y | Code.relHammingDistToCode y (ReedSolomon.code domain deg) ≤ δ}
-    > proximityParams δ deg domain) :
-  correlatedAgreement (ReedSolomon.code domain deg) δ u := by sorry
+-- #check Set.range
+-- #check affineSpan
+-- /--
+-- Theorem 1.6 (Correlated agreement over affine spaces) in Proximity Gaps
+-- -/
+-- theorem correlatedAgreement_affine_spaces [Fintype ι] [Nonempty ι] [Field F] [Fintype F]
+-- {l : ℕ} (u : Fin (l+1) → ι → F) (δ : ℝ≥0) (deg : ℕ) (domain : ι ↪ F)
+-- (hδ : δ ≤ 1 - (ReedSolomonCode.sqrtRate deg domain))
+-- (hproximity : (PMF.uniformOfFintype (affineSpan F (Set.range u))).toOuterMeasure
+--     {y | Code.relHammingDistToCode y (ReedSolomon.code domain deg) ≤ δ}
+--     > proximityParams δ deg domain) :
+--   correlatedAgreement (ReedSolomon.code domain deg) δ u := by sorry
 
-instance {l : ℕ} : Nonempty (Fin (l+1)) := inferInstance
-
-instance {l : ℕ} : Fintype (Fin (l+1)) := inferInstance
-
-instance {l : ℕ} [NeZero l] :
-  Nonempty (Finset.univ : Finset (Fin l)) := inferInstance
-
-
-  rw [← Finset.univ_nonempty_iff]
-  apply Finset.univ_nonempty
-
-
-  haveI := @Finset.univ_nonempty (Fin (l+1)) _ _
-  exact this
-
-
-
-  apply Nonempty.intro
-  exact ⟨0 , by simp⟩
-
-
-
-theorem correlatedAgreement_affine_spaces' [Fintype ι] [Field F] [Fintype F]
-[DecidableEq F]
-{l : ℕ} (u : Fin (l+1) → ι → F) (δ : ℝ≥0) (deg : ℕ) (domain : ι ↪ F)
-(hδ : δ ≤ 1 - (ReedSolomonCode.sqrtRate deg domain))
-(hproximity : (PMF.uniformOfFintype (affineSpan F (Finset.univ.image u))).toOuterMeasure
-    sorry
-    > proximityParams δ deg domain) :
-  correlatedAgreement (ReedSolomon.code domain deg) δ u := by sorry
-
-
---- { y : affineSpan F (Finset.univ.image u) |
--- Code.relHammingDistToCode y.1 (ReedSolomon.code domain deg) ≤ δ}
-
-
-#check Set.range
-#check affineSpan
-/--
-Theorem 1.6 (Correlated agreement over affine spaces) in Proximity Gaps
---- how do I represent `u` as a set?
--/
-theorem correlatedAgreement_affine_spaces [Fintype ι] [Nonempty ι] [Field F] [Fintype F]
-{l : ℕ} (u : Fin (l+1) → ι → F) (δ : ℝ≥0) (deg : ℕ) (domain : ι ↪ F)
-(hδ : δ ≤ 1 - (ReedSolomonCode.sqrtRate deg domain))
-(hproximity : (PMF.uniformOfFintype (affineSpan F (Set.range u))).toOuterMeasure
-    {y | Code.relHammingDistToCode y (ReedSolomon.code domain deg) ≤ δ}
-    > proximityParams δ deg domain) :
-  correlatedAgreement (ReedSolomon.code domain deg) δ u := by sorry
 
 instance {l : ℕ} [NeZero l] : Nonempty (Fin l) := inferInstance
 
@@ -256,45 +207,328 @@ instance {α : Type} [Fintype α] [Nonempty α] :
   -- apply Nonempty.intro
   -- exact ⟨0 , by simp⟩
 
+def thing {k : ℕ} [Fintype ι] (u : Fin k → ι → F) : Finset (ι → F) :=
+  Finset.univ.image u
 
+namespace thing
+
+theorem thing₁ {F ι : Type*} [DecidableEq F] {k : ℕ} [NeZero k] [Fintype ι] {u : Fin k → ι → F} :
+  (thing u).Nonempty := by simp [thing]
+
+instance {F ι : Type*} [DecidableEq F] {k : ℕ} [NeZero k] [Fintype ι] {u : Fin k → ι → F} :
+  Nonempty (thing u) := by
+  have := thing₁ (u := u)
+  simp only [nonempty_subtype]
+  exact this
+
+theorem thing₂ {α P V : Type*} [AddCommGroup V] [Ring α] [Module α V] {s : Set P} (h : Set.Nonempty s)
+               [AddTorsor V P] : Nonempty ↥(@affineSpan α V P _ _ _ _ s) := by
+  have := @affineSpan_nonempty α V P _ _ _ _ s
+  unfold Set.Nonempty at this h
+  simp
+  symm at this
+  apply this.1
+  exact h
+
+theorem thing₄ {α P V : Type*} [AddCommGroup V] [Fintype α] [Ring α] [Module α V] [Fintype P] {s : Finset P}
+           [AddTorsor V P] : Finite ↥(@affineSpan α V P _ _ _ _ s) := by
+  unfold affineSpan
+  infer_instance
+
+noncomputable def thing₃ {α P V : Type*} [Fintype α] [AddCommGroup V]
+                                         [Ring α] [Module α V] [Fintype P] {s : Finset P}
+           [AddTorsor V P] : Fintype ↥(@affineSpan α V P _ _ _ _ s) := by
+  have := @thing₄ α P V _ _ _ _ _ s _
+  apply Fintype.ofFinite
+
+end thing
+
+def X (n : ℕ) : Type := {x : ℕ // x < n}
+
+def eq {n : ℕ} : X n ≃ Fin n := sorry
+
+#check Fin.add_one_le_of_lt
+
+instance {n : ℕ} : Preorder (X n) where
+  le a b := eq a ≤ eq b
+  le_refl := λ _ ↦ Fin.le_refl _
+  le_trans := λ _ _ _ ↦ Fin.le_trans
+
+instance {n : ℕ} : Add (X n) := Equiv.add eq
+
+instance {n : ℕ} [NeZero n] {i : ℕ} : OfNat (X n) i where
+  ofNat := eq.symm (Fin.ofNat' n i)
+
+theorem abc {n : ℕ} {a b : X (n + 1)} (h : a < b) : a + 1 ≤ b := by
+  unfold LE.le
+  unfold_projs
+  simp
+  apply Fin.add_one_le_of_lt
+  unfold LT.lt at h
+  unfold_projs at h
+  simp at h
+  exact h.2
 
 theorem correlatedAgreement_affine_spaces' [Fintype ι] [Field F] [Fintype F]
-[DecidableEq F]
-{l : ℕ} [NeZero l] (u : Fin l → ι → F) (δ : ℝ≥0) (deg : ℕ) (domain : ι ↪ F)
+  [DecidableEq F] [AddTorsor F (ι → F)]
+  {k : ℕ} [NeZero k] (u : Fin k → ι → F) (δ : ℝ≥0) (deg : ℕ) (domain : ι ↪ F)
+  -- (hδ : δ ≤ 1 - (ReedSolomonCode.sqrtRate deg domain))
+    (hproximity : PMF.toOuterMeasure
+                    (@PMF.uniformOfFintype
+                      (@affineSpan F F (ι → F) _ _ _ _ (thing u))
+                      (@thing.thing₃ F (ι → F) F _ _ _ _ _ (thing u) _)
+                      (@thing.thing₂ F (ι → F) F _ _ _ (thing u)
+                                       (@thing.thing₁ F ι _ k _ _ u) _)) > sorry) : False := by sorry
+
+end
+
+
+
+
+
+
+-- instance {l : ℕ} : Nonempty (Fin (l+1)) := inferInstance
+
+-- instance {l : ℕ} : Fintype (Fin (l+1)) := inferInstance
+
+-- instance {l : ℕ} [NeZero l] :
+--   Nonempty (Finset.univ : Finset (Fin l)) := inferInstance
+
+
+--   rw [← Finset.univ_nonempty_iff]
+--   apply Finset.univ_nonempty
+
+
+--   haveI := @Finset.univ_nonempty (Fin (l+1)) _ _
+--   exact this
+
+
+
+--   apply Nonempty.intro
+--   exact ⟨0 , by simp⟩
+
+
+
+-- theorem correlatedAgreement_affine_spaces' [Fintype ι] [Field F] [Fintype F]
+-- [DecidableEq F]
+-- {l : ℕ} (u : Fin (l+1) → ι → F) (δ : ℝ≥0) (deg : ℕ) (domain : ι ↪ F)
 -- (hδ : δ ≤ 1 - (ReedSolomonCode.sqrtRate deg domain))
-  (hproximity : (@PMF.uniformOfFintype (@affineSpan F F
-                                          (ι → F) _ _ _ {vsub := sorry, vsub_vadd' := sorry, vadd_vsub' := sorry}
-                                          (Finset.univ.image u))
-                                          (let x : AffineSubspace F (ι → F) := affineSpan F ↑(image u univ)
-                                           let y : Set _ := SetLike.coe x
-                                           by have : y = ↑x := by aesop
-                                              simp [x] at this
-                                              have : Finite y := by
-                                                rw [this]
-                                                exact Subtype.finite
-                                              simp [y, x] at this
-                                              have := Fintype.ofFinite ↑(spanPoints F (Set.range u))
-                                              simp
-                                              simp_rw [←coe_affineSpan] at this
-                                              convert this
-                                              ext x
-                                              simp
-                                              refine ⟨λ h ↦ ?p₁, λ h ↦ ?p₂⟩
-                                              sorry
-                                              sorry
-                                          ) (by have := Set.Nonempty.affineSpan
-                                                simp
-                                                use 0
-                                                sorry)).toOuterMeasure
-      sorry
-      > 42.) : False := by
-  sorry
-  -- correlatedAgreement (ReedSolomon.code domain deg) δ u := by sorry
+-- (hproximity : (PMF.uniformOfFintype (affineSpan F (Finset.univ.image u))).toOuterMeasure
+--     sorry
+--     > proximityParams δ deg domain) :
+--   correlatedAgreement (ReedSolomon.code domain deg) δ u := by sorry
 
 
---- { y : affineSpan F (Finset.univ.image u) |
--- Code.relHammingDistToCode y.1 (ReedSolomon.code domain deg) ≤ δ}
+-- --- { y : affineSpan F (Finset.univ.image u) |
+-- -- Code.relHammingDistToCode y.1 (ReedSolomon.code domain deg) ≤ δ}
 
-end
 
-end
+-- #check Set.range
+-- #check affineSpan
+-- /--
+-- Theorem 1.6 (Correlated agreement over affine spaces) in Proximity Gaps
+-- --- how do I represent `u` as a set?
+-- -/
+-- theorem correlatedAgreement_affine_spaces'' [Fintype ι] [Nonempty ι] [Field F] [Fintype F]
+-- {l : ℕ} (u : Fin (l+1) → ι → F) (δ : ℝ≥0) (deg : ℕ) (domain : ι ↪ F)
+-- (hδ : δ ≤ 1 - (ReedSolomonCode.sqrtRate deg domain))
+-- (hproximity : (PMF.uniformOfFintype (affineSpan F (Set.range u))).toOuterMeasure
+--     {y | Code.relHammingDistToCode y (ReedSolomon.code domain deg) ≤ δ}
+--     > proximityParams δ deg domain) :
+--   correlatedAgreement (ReedSolomon.code domain deg) δ u := by sorry
+
+
+
+-- instance {l : ℕ} [NeZero l] : Nonempty (Fin l) := inferInstance
+
+-- instance {l : ℕ} [NeZero l] : Fintype (Fin l) := inferInstance
+
+-- -- instance {l : ℕ} [NeZero l] :
+-- --   Inhabited (Finset.univ : Finset (Fin l)) := inferInstance
+
+-- #check Fintype.ofFinite
+
+-- instance {α : Type} [Fintype α] [Nonempty α] :
+--   Nonempty (Finset.univ : Finset α) := by exact Nonempty.to_subtype (univ_nonempty_iff.mpr (by assumption))
+--   -- refine Nonempty.to_subtype ?_
+
+
+--   -- rw [← Finset.univ_nonempty_iff]
+--   -- apply Finset.univ_nonempty
+
+
+--   -- haveI := @Finset.univ_nonempty (Fin (l+1)) _ _
+--   -- exact this
+
+
+
+--   -- apply Nonempty.intro
+--   -- exact ⟨0 , by simp⟩
+
+-- def thing {k : ℕ} [Fintype ι] (u : Fin k → ι → F) : Finset (ι → F) :=
+--   Finset.univ.image u
+
+-- namespace thing
+
+-- theorem thing₁ {F ι : Type*} [DecidableEq F] {k : ℕ} [NeZero k] [Fintype ι] {u : Fin k → ι → F} :
+--   (thing u).Nonempty := by simp [thing]
+
+-- instance {F ι : Type*} [DecidableEq F] {k : ℕ} [NeZero k] [Fintype ι] {u : Fin k → ι → F} :
+--   Nonempty (thing u) := by
+--   have := thing₁ (u := u)
+--   simp only [nonempty_subtype]
+--   exact this
+
+-- lemma finite_filter_exists {α : Type*} {s : Finset α} {P : α → α → Prop} :
+--   Finite {x : α | ∃ i ∈ ↑s, P x i} := by sorry
+
+-- theorem thing₂ {α P V : Type*} [AddCommGroup V] [Ring α] [Module α V] {s : Set P} (h : Set.Nonempty s)
+--                [AddTorsor V P] : Nonempty ↥(@affineSpan α V P _ _ _ _ s) := by
+--   have := @affineSpan_nonempty α V P _ _ _ _ s
+--   unfold Set.Nonempty at this h
+--   simp
+--   symm at this
+--   apply this.1
+--   exact h
+
+-- theorem thing₄ {α P V : Type*} [AddCommGroup V] [Fintype α] [Ring α] [Module α V] [Module.Finite α V] {s : Finset P}
+--            [AddTorsor V P] : Finite ↥(@affineSpan α V P _ _ _ _ s) := by
+--   unfold affineSpan
+--   suffices Finite (spanPoints α s.toSet) by aesop
+--   unfold spanPoints
+--   exact finite_filter_exists
+
+
+--   -- rw [@Set.finite_coe_iff]
+--   -- simp only [mem_coe]
+
+
+
+--   -- suffices Finite ↑{p | True} by done
+
+
+--   --   done
+--   -- -- obtain ⟨n, s, h⟩ := @Module.Finite.exists_fin α V _ _ _ _
+
+
+-- noncomputable def thing₃ {α P V : Type*} [Fintype α] [AddCommGroup V] [Ring α] [Module α V] {s : Finset P}
+--            [AddTorsor V P] : Fintype ↥(@affineSpan α V P _ _ _ _ s) := by
+--   have := @thing₄ α P V _ _ _ _ s _
+--   apply Fintype.ofFinite
+
+-- end thing
+
+-- theorem correlatedAgreement_affine_spaces' [Fintype ι] [Field F] [Fintype F]
+--   [DecidableEq F] [AddTorsor F (ι → F)]
+--   {k : ℕ} [NeZero k] (u : Fin k → ι → F) (δ : ℝ≥0) (deg : ℕ) (domain : ι ↪ F)
+--   -- (hδ : δ ≤ 1 - (ReedSolomonCode.sqrtRate deg domain))
+--     (hproximity : PMF.toOuterMeasure
+--                     (@PMF.uniformOfFintype
+--                       (@affineSpan F F (ι → F) _ _ _ _ (thing u))
+--                       (@thing.thing₃ F (ι → F) F _ _ _ _ (thing u) _)
+--                       (@thing.thing₂ F (ι → F) F _ _ _ (thing u)
+--                                        (@thing.thing₁ F ι _ k _ _ u) _)) > sorry) : False := by sorry
+
+--   -- (hproximity : (@PMF.uniformOfFintype (@affineSpan F F
+--   --                                         (ι → F) _ _ _ {vsub := sorry, vsub_vadd' := sorry, vadd_vsub' := sorry}
+--   --                                         (Finset.univ.image u))
+--   --                                         (let x : AffineSubspace F (ι → F) := affineSpan F ↑(image u univ)
+--   --                                          let y : Set _ := SetLike.coe x
+--   --                                          by have : y = ↑x := by aesop
+--   --                                             simp [x] at this
+--   --                                             have : Finite y := by
+--   --                                               rw [this]
+--   --                                               exact Subtype.finite
+--   --                                             simp [y, x] at this
+--   --                                             have := Fintype.ofFinite ↑(spanPoints F (Set.range u))
+--   --                                             simp
+--   --                                             simp_rw [←coe_affineSpan] at this
+--   --                                             convert this
+--   --                                             ext x
+--   --                                             simp
+--   --                                             refine ⟨λ h ↦ ?p₁, λ h ↦ ?p₂⟩
+--   --                                             sorry
+--   --                                             sorry
+--   --                                         ) (by have := Set.Nonempty.affineSpan
+--   --                                               simp
+--   --                                               use 0
+--   --                                               sorry)).toOuterMeasure
+--   --     sorry
+--   --     > 42.) : False := by
+--   sorry
+--   -- correlatedAgreement (ReedSolomon.code domain deg) δ u := by sorry
+
+
+-- --- { y : affineSpan F (Finset.univ.image u) |
+-- -- Code.relHammingDistToCode y.1 (ReedSolomon.code domain deg) ≤ δ}
+
+-- -- end
+
+-- -- instance {l : ℕ} [NeZero l] : Nonempty (Fin l) := inferInstance
+
+-- -- instance {l : ℕ} [NeZero l] : Fintype (Fin l) := inferInstance
+
+-- -- -- instance {l : ℕ} [NeZero l] :
+-- -- --   Inhabited (Finset.univ : Finset (Fin l)) := inferInstance
+
+-- -- #check Fintype.ofFinite
+
+-- -- instance {α : Type} [Fintype α] [Nonempty α] :
+-- --   Nonempty (Finset.univ : Finset α) := by exact Nonempty.to_subtype (univ_nonempty_iff.mpr (by assumption))
+-- --   -- refine Nonempty.to_subtype ?_
+
+
+-- --   -- rw [← Finset.univ_nonempty_iff]
+-- --   -- apply Finset.univ_nonempty
+
+
+-- --   -- haveI := @Finset.univ_nonempty (Fin (l+1)) _ _
+-- --   -- exact this
+
+
+
+-- --   -- apply Nonempty.intro
+-- --   -- exact ⟨0 , by simp⟩
+
+
+
+-- -- theorem correlatedAgreement_affine_spaces' [Fintype ι] [Field F] [Fintype F]
+-- -- [DecidableEq F]
+-- -- {l : ℕ} [NeZero l] (u : Fin l → ι → F) (δ : ℝ≥0) (deg : ℕ) (domain : ι ↪ F)
+-- -- -- (hδ : δ ≤ 1 - (ReedSolomonCode.sqrtRate deg domain))
+-- --   (hproximity : (@PMF.uniformOfFintype (@affineSpan F F
+-- --                                           (ι → F) _ _ _ {vsub := sorry, vsub_vadd' := sorry, vadd_vsub' := sorry}
+-- --                                           (Finset.univ.image u))
+-- --                                           (let x : AffineSubspace F (ι → F) := affineSpan F ↑(image u univ)
+-- --                                            let y : Set _ := SetLike.coe x
+-- --                                            by have : y = ↑x := by aesop
+-- --                                               simp [x] at this
+-- --                                               have : Finite y := by
+-- --                                                 rw [this]
+-- --                                                 exact Subtype.finite
+-- --                                               simp [y, x] at this
+-- --                                               have := Fintype.ofFinite ↑(spanPoints F (Set.range u))
+-- --                                               simp
+-- --                                               simp_rw [←coe_affineSpan] at this
+-- --                                               convert this
+-- --                                               ext x
+-- --                                               simp
+-- --                                               refine ⟨λ h ↦ ?p₁, λ h ↦ ?p₂⟩
+-- --                                               sorry
+-- --                                               sorry
+-- --                                           ) (by have := Set.Nonempty.affineSpan
+-- --                                                 simp
+-- --                                                 use 0
+-- --                                                 sorry)).toOuterMeasure
+-- --       sorry
+-- --       > 42.) : False := by
+-- --   sorry
+-- --   -- correlatedAgreement (ReedSolomon.code domain deg) δ u := by sorry
+
+
+-- -- --- { y : affineSpan F (Finset.univ.image u) |
+-- -- -- Code.relHammingDistToCode y.1 (ReedSolomon.code domain deg) ≤ δ}
+
+-- -- end
+
+-- end
